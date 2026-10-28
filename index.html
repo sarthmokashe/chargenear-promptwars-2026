@@ -86,6 +86,17 @@
 
       <!-- Filters -->
       <div class="filters-card" role="search" aria-label="Filter chargers">
+        <!-- Smart Assistant Quick Match -->
+        <div class="smart-assistant-bar" role="toolbar" aria-label="Smart driver recommendations">
+          <span class="smart-assist-title"><span aria-hidden="true">🤖</span> Smart Match:</span>
+          <div class="preset-group">
+            <button type="button" class="preset-pill" data-preset="fast">⚡ Fast CCS2</button>
+            <button type="button" class="preset-pill" data-preset="budget">💰 Under ₹60/hr</button>
+            <button type="button" class="preset-pill" data-preset="nearest">📍 Nearest</button>
+            <button type="button" class="preset-pill" data-preset="standard">🔌 Type 2</button>
+          </div>
+        </div>
+
         <div class="filter-row">
           <div class="filter-field">
             <label for="filter-connector">Connector</label>
@@ -158,6 +169,7 @@
               <div class="input-neu">
                 <select id="booking-hour" required></select>
               </div>
+              <div id="booking-slot-hint" class="smart-slot-hint" aria-live="polite"></div>
             </div>
             <div class="form-group">
               <label for="booking-duration">Duration</label>
@@ -257,7 +269,10 @@
             </div>
 
             <div class="form-group">
-              <label for="host-price">Price / hr (₹)</label>
+              <div class="label-row-smart">
+                <label for="host-price">Price / hr (₹)</label>
+                <button type="button" id="btn-smart-price" class="btn-smart-link" title="Apply smart benchmark rate">💡 Suggest Price</button>
+              </div>
               <div class="input-neu">
                 <input type="number" id="host-price" placeholder="e.g. 80"
                        min="10" max="500" required />

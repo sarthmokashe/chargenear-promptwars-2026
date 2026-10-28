@@ -1,32 +1,42 @@
-// storage.js — Safe localStorage read/write helpers for ChargeNear
-// Every read/write is wrapped in try/catch; falls back to seed data on error.
+/**
+ * storage.js — Safe localStorage read/write helpers for ChargeNear.
+ * Every read and write is wrapped in try/catch; gracefully recovers to seed data on error.
+ */
+
+"use strict";
 
 /* global SEED_CHARGERS */
 
-const STORAGE_KEYS = {
+const STORAGE_KEYS = Object.freeze({
   CHARGERS: "chargenear_chargers_v1",
   BOOKINGS: "chargenear_bookings_v1",
   USER_LOC: "chargenear_userloc_v1"
-};
+});
 
-// Load chargers from localStorage; seeds with SEED_CHARGERS if empty or corrupt.
+/**
+ * loadChargers — Loads persisted chargers or initializes storage with seed data.
+ * @returns {Array<Object>} List of charger objects.
+ */
 function loadChargers() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.CHARGERS);
     if (!raw) {
       saveChargers(SEED_CHARGERS);
-      return SEED_CHARGERS.map(function(c) { return Object.assign({}, c); });
+      return SEED_CHARGERS.map((c) => Object.assign({}, c));
     }
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) throw new Error("not an array");
+    if (!Array.isArray(parsed)) throw new Error("Chargers payload is not an array");
     return parsed;
   } catch (e) {
     console.warn("ChargeNear: localStorage read error for chargers, using seed data.", e);
-    return SEED_CHARGERS.map(function(c) { return Object.assign({}, c); });
+    return SEED_CHARGERS.map((c) => Object.assign({}, c));
   }
 }
 
-// Persist the chargers array to localStorage.
+/**
+ * saveChargers — Persists the chargers list to localStorage.
+ * @param {Array<Object>} chargers
+ */
 function saveChargers(chargers) {
   try {
     localStorage.setItem(STORAGE_KEYS.CHARGERS, JSON.stringify(chargers));
@@ -35,13 +45,16 @@ function saveChargers(chargers) {
   }
 }
 
-// Load bookings from localStorage; returns [] on error.
+/**
+ * loadBookings — Retrieves stored user bookings.
+ * @returns {Array<Object>} List of booking objects.
+ */
 function loadBookings() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.BOOKINGS);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) throw new Error("not an array");
+    if (!Array.isArray(parsed)) throw new Error("Bookings payload is not an array");
     return parsed;
   } catch (e) {
     console.warn("ChargeNear: localStorage read error for bookings.", e);
@@ -49,7 +62,10 @@ function loadBookings() {
   }
 }
 
-// Persist the bookings array to localStorage.
+/**
+ * saveBookings — Persists user bookings to localStorage.
+ * @param {Array<Object>} bookings
+ */
 function saveBookings(bookings) {
   try {
     localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(bookings));
@@ -58,7 +74,10 @@ function saveBookings(bookings) {
   }
 }
 
-// Load user location {lat, lng}; returns null if not set or invalid.
+/**
+ * loadUserLoc — Retrieves cached user coordinates.
+ * @returns {{lat: number, lng: number}|null}
+ */
 function loadUserLoc() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.USER_LOC);
@@ -71,7 +90,11 @@ function loadUserLoc() {
   }
 }
 
-// Persist user coordinates (only lat/lng, nothing else).
+/**
+ * saveUserLoc — Persists user coordinates (strictly lat and lng numbers).
+ * @param {number} lat
+ * @param {number} lng
+ */
 function saveUserLoc(lat, lng) {
   try {
     localStorage.setItem(STORAGE_KEYS.USER_LOC, JSON.stringify({ lat: lat, lng: lng }));

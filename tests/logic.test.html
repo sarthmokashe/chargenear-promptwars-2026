@@ -5,27 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>⚡ ChargeNear — Logic Tests</title>
   <style>
-    body { font-family: -apple-system, sans-serif; padding: 24px; max-width: 640px; margin: 0 auto; background: #f8fafc; }
-    h1   { color: #0f766e; margin-bottom: 4px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; max-width: 680px; margin: 0 auto; background: #f8fafc; color: #0f172a; }
+    h1   { color: #0f766e; margin-bottom: 4px; font-size: 1.5rem; }
     p.subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 24px; }
-    .test { padding: 10px 14px; margin: 6px 0; border-radius: 8px; font-size: 0.9rem; font-family: monospace; }
+    .test { padding: 10px 14px; margin: 6px 0; border-radius: 8px; font-size: 0.88rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
     .pass { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
     .fail { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
     #summary { margin-top: 20px; font-weight: 700; font-size: 1.1rem; padding: 14px 16px; border-radius: 8px; }
-    .all-pass { background: #dcfce7; color: #15803d; }
-    .some-fail{ background: #fee2e2; color: #dc2626; }
+    .all-pass { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .some-fail{ background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
   </style>
 </head>
 <body>
   <h1>⚡ ChargeNear — Logic Tests</h1>
-  <p class="subtitle">In-browser unit tests for logic.js pure functions. All results should be green.</p>
+  <p class="subtitle">In-browser unit tests for logic.js pure business functions & smart assistant logic.</p>
   <div id="results"></div>
   <div id="summary"></div>
 
-  <!-- Load only logic.js (no DOM required) -->
+  <!-- Load only logic.js (zero DOM dependencies) -->
   <script src="../js/logic.js"></script>
   <script>
-    var tests = [];
+    const tests = [];
 
     function assert(description, condition) {
       tests.push({ description: description, passed: !!condition });
@@ -36,7 +36,7 @@
       "haversineKm: identical points → ~0 km",
       haversineKm(18.5, 73.8, 18.5, 73.8) < 0.001
     );
-    var d = haversineKm(18.5074, 73.8077, 18.5800, 73.9800); // Kothrud → Wagholi
+    const d = haversineKm(18.5074, 73.8077, 18.5800, 73.9800); // Kothrud → Wagholi
     assert(
       "haversineKm: Kothrud→Wagholi is 10–25 km (got " + d.toFixed(2) + " km)",
       d > 10 && d < 25
@@ -83,67 +83,92 @@
     );
 
     // ── calcEarnings ─────────────────────────────────────────────────────────
-    // 10h available, 25% utilization, ₹80/hr
-    // monthlyGross = 10 × 0.25 × 80 × 30 = 6000
-    // fee          = 6000 × 0.10 = 600
-    // net          = 6000 × 0.90 = 5400
-    var e = calcEarnings(10, 0.25, 80);
-    assert("calcEarnings(10h, 25%, ₹80) → gross ₹6,000 (got ₹" + e.gross + ")", e.gross === 6000);
-    assert("calcEarnings(10h, 25%, ₹80) → fee  ₹600  (got ₹" + e.fee  + ")", e.fee  === 600);
-    assert("calcEarnings(10h, 25%, ₹80) → net  ₹5,400 (got ₹" + e.net  + ")", e.net  === 5400);
+    const e = calcEarnings(10, 0.25, 80);
+    assert("calcEarnings(10h, 25%, ₹80) → gross ₹6,000", e.gross === 6000);
+    assert("calcEarnings(10h, 25%, ₹80) → fee ₹600", e.fee === 600);
+    assert("calcEarnings(10h, 25%, ₹80) → net ₹5,400", e.net === 5400);
 
-    // Second test case: 12h, 40%, ₹100
-    // gross = 12 × 0.40 × 100 × 30 = 14400, net = 12960
-    var e2 = calcEarnings(12, 0.40, 100);
-    assert("calcEarnings(12h, 40%, ₹100) → gross ₹14,400 (got ₹" + e2.gross + ")", e2.gross === 14400);
-    assert("calcEarnings(12h, 40%, ₹100) → net ₹12,960 (got ₹" + e2.net + ")",   e2.net   === 12960);
+    const e2 = calcEarnings(12, 0.40, 100);
+    assert("calcEarnings(12h, 40%, ₹100) → gross ₹14,400", e2.gross === 14400);
+    assert("calcEarnings(12h, 40%, ₹100) → net ₹12,960", e2.net === 12960);
+
+    // ── Smart Assistant: suggestConnector ────────────────────────────────────
+    const sampleChargers = [
+      { connector: "CCS2" },
+      { connector: "Type 2" },
+      { connector: "CCS2" }
+    ];
+    assert(
+      "suggestConnector: identifies predominant connector (CCS2)",
+      suggestConnector(sampleChargers) === "CCS2"
+    );
+
+    // ── Smart Assistant: getAvailableSlots ───────────────────────────────────
+    const testCharger = { id: "c_test", availableFrom: "08:00", availableTo: "12:00" };
+    const existingBookings = [
+      { chargerId: "c_test", date: "2026-10-30", startHour: 9, durationHours: 2 } // 9:00 - 11:00
+    ];
+    const freeSlots = getAvailableSlots(testCharger, "2026-10-30", existingBookings);
+    assert(
+      "getAvailableSlots: detects free slots (8:00 and 11:00 free)",
+      freeSlots.length === 2 && freeSlots[0] === 8 && freeSlots[1] === 11
+    );
+
+    // ── Smart Assistant: recommendPricing ────────────────────────────────────
+    const recStandard = recommendPricing(7.4, "Kothrud, Pune");
+    assert("recommendPricing: standard 7.4kW suggests ₹75/hr", recStandard === 75);
+    const recPremium = recommendPricing(7.4, "Hinjewadi, Pune");
+    assert("recommendPricing: tech-hub Hinjewadi premium calculates ₹85/hr", recPremium === 85);
+    const recFast = recommendPricing(50, "Baner, Pune");
+    assert("recommendPricing: DC Fast 50kW in Baner suggests ₹200/hr", recFast === 200);
 
     // ── validateCharger ──────────────────────────────────────────────────────
-    var good = { name: "My Charger", area: "Baner, Pune", powerKw: "7.4",
-                 pricePerHour: "80", availableFrom: "08:00", availableTo: "20:00",
-                 hostName: "Ravi M." };
+    const good = {
+      name: "My Charger",
+      area: "Baner, Pune",
+      powerKw: "7.4",
+      pricePerHour: "80",
+      availableFrom: "08:00",
+      availableTo: "20:00",
+      hostName: "Ravi M."
+    };
 
-    assert("validateCharger: valid data → valid",
-      validateCharger(good).valid
-    );
-    assert("validateCharger: empty name → invalid",
-      !validateCharger(Object.assign({}, good, { name: "" })).valid
-    );
-    assert("validateCharger: name too short (< 3 chars) → invalid",
-      !validateCharger(Object.assign({}, good, { name: "AB" })).valid
-    );
-    assert("validateCharger: price 0 → invalid",
-      !validateCharger(Object.assign({}, good, { pricePerHour: "0" })).valid
-    );
-    assert("validateCharger: price 9 (below min ₹10) → invalid",
-      !validateCharger(Object.assign({}, good, { pricePerHour: "9" })).valid
-    );
-    assert("validateCharger: availableTo <= availableFrom → invalid",
-      !validateCharger(Object.assign({}, good, { availableFrom: "20:00", availableTo: "08:00" })).valid
-    );
-    assert("validateCharger: availableTo == availableFrom → invalid",
-      !validateCharger(Object.assign({}, good, { availableFrom: "10:00", availableTo: "10:00" })).valid
-    );
-    assert("validateCharger: no area selected → invalid",
-      !validateCharger(Object.assign({}, good, { area: "" })).valid
-    );
-    assert("validateCharger: host name too short → invalid",
-      !validateCharger(Object.assign({}, good, { hostName: "A" })).valid
-    );
+    assert("validateCharger: valid data → valid", validateCharger(good).valid);
+    assert("validateCharger: empty name → invalid", !validateCharger(Object.assign({}, good, { name: "" })).valid);
+    assert("validateCharger: name too short (< 3 chars) → invalid", !validateCharger(Object.assign({}, good, { name: "AB" })).valid);
+    assert("validateCharger: price 0 → invalid", !validateCharger(Object.assign({}, good, { pricePerHour: "0" })).valid);
+    assert("validateCharger: price 9 (below min ₹10) → invalid", !validateCharger(Object.assign({}, good, { pricePerHour: "9" })).valid);
+    assert("validateCharger: availableTo <= availableFrom → invalid", !validateCharger(Object.assign({}, good, { availableFrom: "20:00", availableTo: "08:00" })).valid);
+    assert("validateCharger: availableTo == availableFrom → invalid", !validateCharger(Object.assign({}, good, { availableFrom: "10:00", availableTo: "10:00" })).valid);
+    assert("validateCharger: no area selected → invalid", !validateCharger(Object.assign({}, good, { area: "" })).valid);
+    assert("validateCharger: host name too short → invalid", !validateCharger(Object.assign({}, good, { hostName: "A" })).valid);
+
+    // ── validateBooking ──────────────────────────────────────────────────────
+    const today = new Date();
+    const yyyy  = today.getFullYear();
+    const mm    = String(today.getMonth() + 1).padStart(2, "0");
+    const dd    = String(today.getDate()).padStart(2, "0");
+    const todayStr = yyyy + "-" + mm + "-" + dd;
+    const validBooking = { date: todayStr, startHour: 8, durationHours: 2, driverName: "Anil K." };
+
+    assert("validateBooking: valid input → valid", validateBooking(validBooking, testCharger, []).valid);
+    assert("validateBooking: driverName < 2 chars → invalid", !validateBooking(Object.assign({}, validBooking, { driverName: "A" }), testCharger, []).valid);
+    assert("validateBooking: duration > 4 hours → invalid", !validateBooking(Object.assign({}, validBooking, { durationHours: 5 }), testCharger, []).valid);
+    assert("validateBooking: slot ending past charger hours → invalid", !validateBooking(Object.assign({}, validBooking, { startHour: 11, durationHours: 2 }), testCharger, []).valid);
 
     // ── Render results ───────────────────────────────────────────────────────
-    var container = document.getElementById("results");
-    var passed    = 0;
+    const container = document.getElementById("results");
+    let passed = 0;
 
     tests.forEach(function(t) {
-      var div = document.createElement("div");
+      const div = document.createElement("div");
       div.className   = "test " + (t.passed ? "pass" : "fail");
       div.textContent = (t.passed ? "✅ " : "❌ ") + t.description;
       container.appendChild(div);
       if (t.passed) passed++;
     });
 
-    var summary = document.getElementById("summary");
+    const summary = document.getElementById("summary");
     summary.textContent = passed + " / " + tests.length + " tests passed";
     summary.className   = passed === tests.length ? "all-pass" : "some-fail";
   </script>

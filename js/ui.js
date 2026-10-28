@@ -1,48 +1,69 @@
-// ui.js — DOM rendering and event handlers
-// Uses only textContent / createElement for user-supplied data (XSS-safe).
-// Never uses innerHTML / outerHTML / eval with user data.
+/**
+ * ui.js — DOM rendering, UI component generation, and view updates for ChargeNear.
+ * Security: Uses exclusively textContent / createElement for all user-supplied data (XSS-safe).
+ * Never uses innerHTML / outerHTML / eval with dynamic user data.
+ */
 
-// ---------------------------------------------------------------------------
-// el: create an element with optional CSS class and text content.
-// ---------------------------------------------------------------------------
+"use strict";
+
+/* global state, haversineKm, parseHour, calcEarnings, getAvailableSlots, switchView, cancelBooking */
+
+/**
+ * el — Safe DOM element factory with optional className and text content.
+ * @param {string} tag HTML tag name
+ * @param {string} [cls] CSS class list
+ * @param {string} [text] Safe text content (assigned via textContent)
+ * @returns {HTMLElement}
+ */
 function el(tag, cls, text) {
-  var node = document.createElement(tag);
-  if (cls)              node.className   = cls;
-  if (text !== undefined) node.textContent = text;
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text !== undefined && text !== null) node.textContent = text;
   return node;
 }
 
-// ---------------------------------------------------------------------------
-// setMsg: show / hide a .form-msg element.
-// type = "success" | "error" | "" (hidden)
-// ---------------------------------------------------------------------------
+/**
+ * setMsg — Updates a .form-msg status banner.
+ * @param {string} id Container element ID
+ * @param {string} text Message text
+ * @param {"success"|"error"|""} type
+ */
 function setMsg(id, text, type) {
-  var node = document.getElementById(id);
+  const node = document.getElementById(id);
   if (!node) return;
   node.textContent = text;
-  node.className   = "form-msg" + (type ? " " + type : "");
+  node.className = "form-msg" + (type ? " " + type : "");
 }
 
-// ---------------------------------------------------------------------------
-// setFieldErr: update an inline field-error element.
-// ---------------------------------------------------------------------------
+/**
+ * setFieldErr — Updates an inline validation error message.
+ * @param {string} id Error label ID
+ * @param {string} text Error text (or empty to clear)
+ */
 function setFieldErr(id, text) {
-  var node = document.getElementById(id);
+  const node = document.getElementById(id);
   if (node) node.textContent = text || "";
 }
 
-// ---------------------------------------------------------------------------
-// clearHostErrors: wipe all host-form validation messages.
-// ---------------------------------------------------------------------------
+/**
+ * clearHostErrors — Clears all field validation errors on the Host form.
+ */
 function clearHostErrors() {
-  ["err-host-name", "err-host-area", "err-host-power",
-   "err-host-price", "err-host-hours", "err-host-hostname"]
-    .forEach(function(id) { setFieldErr(id, ""); });
+  const fields = [
+    "err-host-name",
+    "err-host-area",
+    "err-host-power",
+    "err-host-price",
+    "err-host-hours",
+    "err-host-hostname"
+  ];
+  fields.forEach((id) => setFieldErr(id, ""));
 }
 
-// ---------------------------------------------------------------------------
-// getFilters: read current filter/sort values from the DOM.
-// ---------------------------------------------------------------------------
+/**
+ * getFilters — Reads filter criteria from the search bar.
+ * @returns {{ connector: string, maxPrice: number, sort: string }}
+ */
 function getFilters() {
   return {
     connector: document.getElementById("filter-connector").value,
@@ -51,32 +72,81 @@ function getFilters() {
   };
 }
 
-// ---------------------------------------------------------------------------
-// resetFilters: clear inputs and re-render the list.
-// ---------------------------------------------------------------------------
+/**
+ * resetFilters — Restores default filter values and unselects preset pills.
+ */
 function resetFilters() {
   document.getElementById("filter-connector").value = "";
   document.getElementById("filter-price").value     = "";
   document.getElementById("filter-sort").value      = "distance";
+
+  document.querySelectorAll(".preset-pill").forEach((pill) => {
+    pill.classList.remove("active");
+  });
+
   renderChargerList();
 }
 
-// ---------------------------------------------------------------------------
-// renderEmptyState: build a centred empty-state block.
-// ---------------------------------------------------------------------------
+/**
+ * applyPresetFilter — Smart assistant handler to configure filters by user intent.
+ * @param {"fast"|"budget"|"nearest"|"standard"} preset
+ */
+function applyPresetFilter(preset) {
+  document.querySelectorAll(".preset-pill").forEach((pill) => {
+    pill.classList.toggle("active", pill.getAttribute("data-preset") === preset);
+  });
+
+  const connectorEl = document.getElementById("filter-connector");
+  const priceEl     = document.getElementById("filter-price");
+  const sortEl      = document.getElementById("filter-sort");
+
+  switch (preset) {
+    case "fast":
+      connectorEl.value = "CCS2";
+      priceEl.value     = "";
+      sortEl.value      = "distance";
+      break;
+    case "budget":
+      connectorEl.value = "";
+      priceEl.value     = "60";
+      sortEl.value      = "price";
+      break;
+    case "nearest":
+      connectorEl.value = "";
+      priceEl.value     = "";
+      sortEl.value      = "distance";
+      break;
+    case "standard":
+      connectorEl.value = "Type 2";
+      priceEl.value     = "";
+      sortEl.value      = "distance";
+      break;
+  }
+
+  renderChargerList();
+}
+
+/**
+ * renderEmptyState — Builds an accessible empty state placeholder.
+ * @param {string} icon Emoji or symbol
+ * @param {string} message Descriptive text
+ * @param {boolean} showReset Whether to render a reset button
+ * @returns {HTMLElement}
+ */
 function renderEmptyState(icon, message, showReset) {
-  var wrap = el("div", "empty-state");
+  const wrap = el("div", "empty-state");
   wrap.appendChild(el("div", "empty-icon", icon));
-  wrap.appendChild(el("div", "empty-msg",  message));
+  wrap.appendChild(el("div", "empty-msg", message));
+
   if (showReset) {
-    var btn = el("button", "btn-secondary", "Reset Filters");
+    const btn = el("button", "btn-secondary", "Reset Filters");
     btn.addEventListener("click", resetFilters);
     wrap.appendChild(btn);
   }
   return wrap;
 }
 
-// Map connectors and charger types to relevant 3D imagery
+// 3D image assets for chargers
 const CHARGER_IMAGES = Object.freeze([
   "assets/chargers/charger_ev_car_front.jpg",
   "assets/chargers/charger_wallbox_home.jpg",
@@ -92,49 +162,55 @@ const CHARGER_IMAGES = Object.freeze([
   "assets/chargers/ev_scooter_lime.jpg"
 ]);
 
+/**
+ * getChargerImage — Returns a stable image matching the charger ID.
+ * @param {{ id: string }} charger
+ * @returns {string} Image path
+ */
 function getChargerImage(charger) {
-  // Deterministic photo selection based on charger id
-  var idNum = parseInt((charger.id || "1").replace(/\D/g, ""), 10) || 1;
+  const idNum = parseInt((charger.id || "1").replace(/\D/g, ""), 10) || 1;
   return CHARGER_IMAGES[(idNum - 1) % CHARGER_IMAGES.length];
 }
 
-// ---------------------------------------------------------------------------
-// renderChargerCard: build one charger card article.
-// ---------------------------------------------------------------------------
+/**
+ * renderChargerCard — Constructs the charger card component with image, tags, and booking trigger.
+ * @param {Object} charger
+ * @param {number} distKm
+ * @returns {HTMLElement}
+ */
 function renderChargerCard(charger, distKm) {
-  var card = el("article", "charger-card");
+  const card = el("article", "charger-card");
   card.setAttribute("aria-label", "Charger: " + charger.name);
 
-  // ── Image Thumbnail Container
-  var imgWrap = el("div", "charger-card-media");
-  var img = document.createElement("img");
+  // Thumbnail Container
+  const imgWrap = el("div", "charger-card-media");
+  const img = document.createElement("img");
   img.src = getChargerImage(charger);
   img.alt = charger.name;
   img.className = "charger-card-img";
   img.loading = "lazy";
   imgWrap.appendChild(img);
 
-  // Badge over image
-  var badge = el("span", "charger-badge-speed", charger.powerKw + " kW Fast");
+  // Speed Badge
+  const badge = el("span", "charger-badge-speed", charger.powerKw + " kW Fast");
   imgWrap.appendChild(badge);
-
   card.appendChild(imgWrap);
 
-  // ── Card Body
-  var body = el("div", "charger-card-content");
+  // Card Content
+  const body = el("div", "charger-card-content");
 
-  // Header: name + lime price pill
-  var header = el("div", "charger-card-header");
-  header.appendChild(el("div", "charger-card-name",  charger.name));
+  // Title & Price
+  const header = el("div", "charger-card-header");
+  header.appendChild(el("div", "charger-card-name", charger.name));
   header.appendChild(el("div", "charger-card-price", "₹" + charger.pricePerHour + "/hr"));
   body.appendChild(header);
 
-  // Area
+  // Location Area
   body.appendChild(el("div", "charger-card-area", "📍 " + charger.area));
 
-  // Tags
-  var meta = el("div", "charger-card-meta");
-  meta.appendChild(el("span", "tag",      charger.connector));
+  // Metadata Tags
+  const meta = el("div", "charger-card-meta");
+  meta.appendChild(el("span", "tag", charger.connector));
   meta.appendChild(el("span", "tag-muted", charger.availableFrom + "–" + charger.availableTo));
   meta.appendChild(el("span", "tag-muted", distKm.toFixed(1) + " km"));
   body.appendChild(meta);
@@ -142,41 +218,44 @@ function renderChargerCard(charger, distKm) {
   // Divider
   body.appendChild(el("hr", "card-divider"));
 
-  // Footer: host + Book button
-  var footer = el("div", "charger-card-footer");
+  // Host & Action
+  const footer = el("div", "charger-card-footer");
   footer.appendChild(el("span", "charger-host", "Host: " + charger.hostName));
 
-  var bookBtn = el("button", "btn-primary", "⚡ Book");
+  const bookBtn = el("button", "btn-primary", "⚡ Book");
   bookBtn.setAttribute("aria-label", "Book " + charger.name);
-  bookBtn.addEventListener("click", function() { showBookingView(charger); });
+  bookBtn.addEventListener("click", () => {
+    showBookingView(charger);
+  });
   footer.appendChild(bookBtn);
 
   body.appendChild(footer);
   card.appendChild(body);
-
   return card;
 }
 
-// ---------------------------------------------------------------------------
-// renderChargerList: filter → sort → paint the charger list.
-// ---------------------------------------------------------------------------
+/**
+ * renderChargerList — Filters, sorts, and renders all chargers.
+ */
 function renderChargerList() {
-  var container = document.getElementById("charger-list");
-  container.textContent = ""; // XSS-safe clear
+  const container = document.getElementById("charger-list");
+  container.textContent = "";
 
-  var filters  = getFilters();
-  var filtered = state.chargers.slice();
+  const filters = getFilters();
+  let filtered  = state.chargers.slice();
 
-  // Apply filters
+  // Filter by connector
   if (filters.connector) {
-    filtered = filtered.filter(function(c) { return c.connector === filters.connector; });
-  }
-  if (!isNaN(filters.maxPrice) && filters.maxPrice > 0) {
-    filtered = filtered.filter(function(c) { return c.pricePerHour <= filters.maxPrice; });
+    filtered = filtered.filter((c) => c.connector === filters.connector);
   }
 
-  // Compute Haversine distance
-  filtered = filtered.map(function(c) {
+  // Filter by maximum hourly price
+  if (!isNaN(filters.maxPrice) && filters.maxPrice > 0) {
+    filtered = filtered.filter((c) => c.pricePerHour <= filters.maxPrice);
+  }
+
+  // Calculate distance
+  filtered = filtered.map((c) => {
     return Object.assign({}, c, {
       distKm: haversineKm(state.userLat, state.userLng, c.lat, c.lng)
     });
@@ -184,9 +263,9 @@ function renderChargerList() {
 
   // Sort
   if (filters.sort === "price") {
-    filtered.sort(function(a, b) { return a.pricePerHour - b.pricePerHour; });
+    filtered.sort((a, b) => a.pricePerHour - b.pricePerHour);
   } else {
-    filtered.sort(function(a, b) { return a.distKm - b.distKm; });
+    filtered.sort((a, b) => a.distKm - b.distKm);
   }
 
   if (filtered.length === 0) {
@@ -194,40 +273,69 @@ function renderChargerList() {
     return;
   }
 
-  var list = el("div", "charger-list");
-  filtered.forEach(function(c) {
+  const list = el("div", "charger-list");
+  filtered.forEach((c) => {
     list.appendChild(renderChargerCard(c, c.distKm));
   });
   container.appendChild(list);
 }
 
-// ---------------------------------------------------------------------------
-// populateHourOptions: fill the start-hour <select>.
-// ---------------------------------------------------------------------------
+/**
+ * populateHourOptions — Populates the start-hour dropdown with smart real-time availability badges.
+ * @param {Object} charger
+ */
 function populateHourOptions(charger) {
-  var select = document.getElementById("booking-hour");
+  const select  = document.getElementById("booking-hour");
   select.textContent = "";
-  var from = parseHour(charger.availableFrom);
-  var to   = parseHour(charger.availableTo);
-  for (var h = from; h < to; h++) {
-    var opt = document.createElement("option");
-    opt.value       = String(h);
-    opt.textContent = String(h).padStart(2, "0") + ":00";
+
+  const dateVal = document.getElementById("booking-date").value;
+  const from    = parseHour(charger.availableFrom);
+  const to      = parseHour(charger.availableTo);
+  const freeSlots = getAvailableSlots(charger, dateVal, state.bookings);
+
+  let firstFree = null;
+
+  for (let h = from; h < to; h++) {
+    const isFree = freeSlots.indexOf(h) !== -1;
+    const opt = document.createElement("option");
+    opt.value = String(h);
+    opt.textContent = String(h).padStart(2, "0") + ":00 " + (isFree ? "— ✅ Available" : "— ❌ Booked");
+    if (!isFree) {
+      opt.disabled = true;
+    } else if (firstFree === null) {
+      firstFree = h;
+    }
     select.appendChild(opt);
+  }
+
+  if (firstFree !== null) {
+    select.value = String(firstFree);
+  }
+
+  // Smart slot availability badge
+  const hintEl = document.getElementById("booking-slot-hint");
+  if (hintEl) {
+    if (freeSlots.length > 0) {
+      hintEl.textContent = "⚡ Smart Assistant: " + freeSlots.length + " slot(s) open on this date. Next: " + String(freeSlots[0]).padStart(2, "0") + ":00";
+    } else {
+      hintEl.textContent = "⚠️ Fully booked on this date. Please pick another date.";
+    }
   }
 }
 
-// ---------------------------------------------------------------------------
-// updatePricePreview: live total cost display inside booking form.
-// ---------------------------------------------------------------------------
+/**
+ * updatePricePreview — Live cost calculation in the booking view.
+ */
 function updatePricePreview() {
-  var charger  = state.bookingCharger;
+  const charger = state.bookingCharger;
   if (!charger) return;
-  var hour     = parseInt(document.getElementById("booking-hour").value, 10);
-  var duration = parseInt(document.getElementById("booking-duration").value, 10) || 1;
-  var total    = charger.pricePerHour * duration;
-  var endHour  = hour + duration;
-  var preview  = document.getElementById("booking-price-preview");
+
+  const hour     = parseInt(document.getElementById("booking-hour").value, 10);
+  const duration = parseInt(document.getElementById("booking-duration").value, 10) || 1;
+  const total    = charger.pricePerHour * duration;
+  const endHour  = hour + duration;
+
+  const preview = document.getElementById("booking-price-preview");
   preview.textContent =
     "⚡ Total: ₹" + total +
     "  (" + String(hour).padStart(2, "0") + ":00 – " +
@@ -235,35 +343,34 @@ function updatePricePreview() {
     duration + "h × ₹" + charger.pricePerHour + ")";
 }
 
-// ---------------------------------------------------------------------------
-// showBookingView: populate charger summary + switch to booking section.
-// ---------------------------------------------------------------------------
+/**
+ * showBookingView — Switches to the booking view and pre-fills selected charger data.
+ * @param {Object} charger
+ */
 function showBookingView(charger) {
   state.bookingCharger = charger;
 
-  // ── Build charger info card
-  var info = document.getElementById("booking-charger-info");
-  info.textContent = ""; // safe clear
+  const info = document.getElementById("booking-charger-info");
+  info.textContent = "";
 
-  // Photo header
-  var photoWrap = el("div", "booking-preview-media");
-  var previewImg = document.createElement("img");
+  // Preview Image
+  const photoWrap = el("div", "booking-preview-media");
+  const previewImg = document.createElement("img");
   previewImg.src = getChargerImage(charger);
   previewImg.alt = charger.name;
   previewImg.className = "booking-preview-img";
   photoWrap.appendChild(previewImg);
   info.appendChild(photoWrap);
 
-  var infoContent = el("div", "info-card-content");
+  const infoContent = el("div", "info-card-content");
   infoContent.appendChild(el("div", "info-card-title", "Selected Charger"));
 
-  function addRow(label, value, extraClass) {
-    var row = el("div", "info-row");
+  const addRow = (label, value, extraClass) => {
+    const row = el("div", "info-row");
     row.appendChild(el("span", "info-row-label", label));
-    var val = el("span", "info-row-value" + (extraClass ? " " + extraClass : ""), value);
-    row.appendChild(val);
+    row.appendChild(el("span", "info-row-value" + (extraClass ? " " + extraClass : ""), value));
     infoContent.appendChild(row);
-  }
+  };
 
   addRow("Name",      charger.name);
   addRow("Area",      charger.area);
@@ -273,22 +380,22 @@ function showBookingView(charger) {
 
   info.appendChild(infoContent);
 
-  // ── Date bounds: today → +7 days
-  var today    = new Date();
-  var yyyy     = today.getFullYear();
-  var mm       = String(today.getMonth() + 1).padStart(2, "0");
-  var dd       = String(today.getDate()).padStart(2, "0");
-  var todayStr = yyyy + "-" + mm + "-" + dd;
+  // Date range constraints: today to today + 7 days
+  const today    = new Date();
+  const yyyy     = today.getFullYear();
+  const mm       = String(today.getMonth() + 1).padStart(2, "0");
+  const dd       = String(today.getDate()).padStart(2, "0");
+  const todayStr = yyyy + "-" + mm + "-" + dd;
 
-  var maxD   = new Date(today);
+  const maxD   = new Date(today);
   maxD.setDate(maxD.getDate() + 7);
-  var maxStr = maxD.getFullYear() + "-" +
-               String(maxD.getMonth() + 1).padStart(2, "0") + "-" +
-               String(maxD.getDate()).padStart(2, "0");
+  const maxStr = maxD.getFullYear() + "-" +
+                 String(maxD.getMonth() + 1).padStart(2, "0") + "-" +
+                 String(maxD.getDate()).padStart(2, "0");
 
-  var dateEl  = document.getElementById("booking-date");
-  dateEl.min  = todayStr;
-  dateEl.max  = maxStr;
+  const dateEl = document.getElementById("booking-date");
+  dateEl.min   = todayStr;
+  dateEl.max   = maxStr;
   dateEl.value = todayStr;
 
   populateHourOptions(charger);
@@ -299,52 +406,46 @@ function showBookingView(charger) {
   switchView("booking");
 }
 
-// ---------------------------------------------------------------------------
-// renderBookingsList: paint the My Bookings section.
-// ---------------------------------------------------------------------------
+/**
+ * renderBookingsList — Renders the user's booking history and cancellation controls.
+ */
 function renderBookingsList() {
-  var container = document.getElementById("bookings-list");
+  const container = document.getElementById("bookings-list");
   container.textContent = "";
 
-  var sorted = state.bookings.slice().sort(function(a, b) {
-    return b.createdAt - a.createdAt;
-  });
+  const sorted = state.bookings.slice().sort((a, b) => b.createdAt - a.createdAt);
 
   if (sorted.length === 0) {
     container.appendChild(renderEmptyState("📋", "No bookings yet.", false));
     return;
   }
 
-  var list = el("div", "bookings-list");
+  const list = el("div", "bookings-list");
 
-  sorted.forEach(function(booking) {
-    var charger     = state.chargers.find(function(c) { return c.id === booking.chargerId; });
-    var chargerName = charger ? charger.name : "Unknown charger";
-    var endH        = booking.startHour + booking.durationHours;
+  sorted.forEach((booking) => {
+    const charger     = state.chargers.find((c) => c.id === booking.chargerId);
+    const chargerName = charger ? charger.name : "Unknown charger";
+    const endH        = booking.startHour + booking.durationHours;
 
-    var card = el("article", "booking-card");
+    const card = el("article", "booking-card");
 
-    // Header: charger name + cancel
-    var header = el("div", "booking-card-header");
+    const header = el("div", "booking-card-header");
     header.appendChild(el("div", "booking-card-title", chargerName));
 
-    var cancelBtn = el("button", "btn-danger", "✕ Cancel");
+    const cancelBtn = el("button", "btn-danger", "✕ Cancel");
     cancelBtn.setAttribute("aria-label", "Cancel booking at " + chargerName);
-    (function(id) {
-      cancelBtn.addEventListener("click", function() { cancelBooking(id); });
-    })(booking.id);
+    cancelBtn.addEventListener("click", () => {
+      cancelBooking(booking.id);
+    });
     header.appendChild(cancelBtn);
     card.appendChild(header);
 
-    // Details grid (uses .booking-card-details + .booking-detail)
-    var details = el("div", "booking-card-details");
-
+    const details = el("div", "booking-card-details");
     details.appendChild(el("p", "booking-detail", "📅 " + booking.date));
     details.appendChild(el("p", "booking-detail",
       "⏰ " + String(booking.startHour).padStart(2, "0") + ":00 – " +
       String(endH).padStart(2, "0") + ":00 (" + booking.durationHours + "h)"));
-    details.appendChild(el("p", "booking-detail",
-      "💳 ₹" + booking.totalPrice + " (demo)"));
+    details.appendChild(el("p", "booking-detail", "💳 ₹" + booking.totalPrice + " (demo)"));
     details.appendChild(el("p", "booking-detail", "👤 " + booking.driverName));
 
     card.appendChild(details);
@@ -354,22 +455,20 @@ function renderBookingsList() {
   container.appendChild(list);
 }
 
-// ---------------------------------------------------------------------------
-// updateEstimator: recalculate and paint the live earnings estimate.
-// ---------------------------------------------------------------------------
+/**
+ * updateEstimator — Recalculates host earnings based on operating hours, utilization, and price.
+ */
 function updateEstimator() {
-  var fromVal  = document.getElementById("host-from").value;
-  var toVal    = document.getElementById("host-to").value;
-  var priceVal = parseInt(document.getElementById("host-price").value, 10);
-  var util     = parseInt(document.getElementById("host-utilization").value, 10);
+  const fromVal  = document.getElementById("host-from").value;
+  const toVal    = document.getElementById("host-to").value;
+  const priceVal = parseInt(document.getElementById("host-price").value, 10);
+  const util     = parseInt(document.getElementById("host-utilization").value, 10);
 
-  // Update slider display
   document.getElementById("util-value").textContent = util;
 
-  var resultsEl = document.getElementById("estimator-results");
+  const resultsEl = document.getElementById("estimator-results");
   resultsEl.textContent = "";
 
-  // Guard: need valid price + hours
   if (!fromVal || !toVal || isNaN(priceVal) || priceVal < 10) {
     resultsEl.appendChild(
       el("p", "estimator-placeholder", "Fill in price and hours above to see your estimate.")
@@ -377,25 +476,25 @@ function updateEstimator() {
     return;
   }
 
-  var fromH = parseHour(fromVal);
-  var toH   = parseHour(toVal);
+  const fromH = parseHour(fromVal);
+  const toH   = parseHour(toVal);
   if (toH <= fromH) return;
 
-  var availHours = toH - fromH;
-  var result     = calcEarnings(availHours, util / 100, priceVal);
+  const availHours = toH - fromH;
+  const result     = calcEarnings(availHours, util / 100, priceVal);
 
-  var fmt = function(n) { return "₹" + n.toLocaleString("en-IN"); };
+  const fmt = (n) => "₹" + n.toLocaleString("en-IN");
 
-  function makeRow(label, value, isTotal) {
-    var row = el("div", isTotal ? "estimator-row total" : "estimator-row");
+  const makeRow = (label, value, isTotal) => {
+    const row = el("div", isTotal ? "estimator-row total" : "estimator-row");
     row.appendChild(el("span", null, label));
     row.appendChild(el("span", null, value));
     return row;
-  }
+  };
 
-  resultsEl.appendChild(makeRow("Monthly Gross:",       fmt(result.gross), false));
-  resultsEl.appendChild(makeRow("Platform Fee (10%):",  "−" + fmt(result.fee), false));
-  resultsEl.appendChild(makeRow("Your Net Estimate:",   fmt(result.net),   true));
+  resultsEl.appendChild(makeRow("Monthly Gross:", fmt(result.gross), false));
+  resultsEl.appendChild(makeRow("Platform Fee (10%):", "−" + fmt(result.fee), false));
+  resultsEl.appendChild(makeRow("Your Net Estimate:", fmt(result.net), true));
   resultsEl.appendChild(el("p", "estimator-idle",
     "Your charger would otherwise sit idle ~" + result.idleHours + " hours/day"));
   resultsEl.appendChild(el("p", "estimator-disclaimer",
