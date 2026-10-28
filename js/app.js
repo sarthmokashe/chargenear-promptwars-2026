@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------------------
 // Area → approximate coordinates (for user-listed chargers)
 // ---------------------------------------------------------------------------
-var AREA_COORDS = {
+const AREA_COORDS = Object.freeze({
   "Kothrud, Pune":      { lat: 18.5074, lng: 73.8077 },
   "Baner, Pune":        { lat: 18.5590, lng: 73.7868 },
   "Wagholi, Pune":      { lat: 18.5679, lng: 73.9814 },
@@ -13,11 +13,10 @@ var AREA_COORDS = {
   "Hadapsar, Pune":     { lat: 18.5018, lng: 73.9260 },
   "Shivajinagar, Pune": { lat: 18.5308, lng: 73.8474 },
   "Aundh, Pune":        { lat: 18.5590, lng: 73.8080 }
-};
+});
 
-// Default location: Wagholi, Pune
-var DEFAULT_LAT = 18.5800;
-var DEFAULT_LNG = 73.9800;
+const DEFAULT_LAT = 18.5800;
+const DEFAULT_LNG = 73.9800;
 
 // ---------------------------------------------------------------------------
 // Global app state

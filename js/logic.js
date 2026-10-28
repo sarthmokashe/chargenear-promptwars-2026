@@ -124,8 +124,8 @@ function validateBooking(data, charger, existingBookings) {
                                                 return { valid: false, error: "Invalid start hour." };
   if (isNaN(duration) || duration < 1 || duration > 4)
                                                 return { valid: false, error: "Duration must be 1–4 hours." };
-  if (driverName.length < 1 || driverName.length > 50)
-                                                return { valid: false, error: "Please enter your name (max 50 chars)." };
+  if (driverName.length < 2 || driverName.length > 30)
+                                                return { valid: false, error: "Driver name must be 2–30 characters." };
 
   // Date must be today..today+7
   var today = new Date();

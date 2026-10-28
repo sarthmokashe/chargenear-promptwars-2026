@@ -1,5 +1,6 @@
 // Fictional sample data for demo purposes only.
-const SEED_CHARGERS = [
+/* global SEED_CHARGERS */
+var SEED_CHARGERS = [
   {
     id: "c1",
     name: "Kothrud Maple Charger",

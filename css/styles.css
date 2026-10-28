@@ -498,6 +498,111 @@ input[type="range"] {
   outline-offset: 2px;
 }
 
+/* ── Hero Banner ─────────────────────────────────────────────── */
+.hero-banner {
+  background: var(--card);
+  border-radius: var(--r-xl);
+  box-shadow: var(--neu-out);
+  padding: 28px 24px;
+  margin-bottom: 28px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 20px;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(163,177,198,.2);
+}
+
+.hero-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--lime-soft);
+  color: var(--navy);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  width: fit-content;
+  box-shadow: 2px 2px 6px rgba(120,196,34,.25);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.hero-title {
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--navy);
+  letter-spacing: -.03em;
+}
+
+.hero-subtitle {
+  font-size: 0.92rem;
+  color: var(--navy-80);
+  line-height: 1.5;
+}
+
+.hero-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--gray-light);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-number {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--navy);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--navy-50);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-top: 3px;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--gray-mid);
+}
+
+.hero-visual {
+  width: 100%;
+  max-width: 240px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hero-img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--r-lg);
+  box-shadow: var(--neu-card);
+  object-fit: cover;
+}
+
 /* ── Charger Cards ────────────────────────────────────────────── */
 .charger-list { display: flex; flex-direction: column; gap: 16px; }
 
@@ -505,14 +610,58 @@ input[type="range"] {
   background: var(--card);
   border-radius: var(--r-lg);
   box-shadow: var(--neu-out);
-  padding: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   transition: box-shadow var(--t), transform var(--t);
+  border: 1px solid rgba(226, 232, 240, 0.7);
 }
 .charger-card:hover {
   box-shadow:
-    8px 8px 16px rgba(163,177,198,.55),
+    8px 8px 18px rgba(163,177,198,.60),
    -5px -5px 14px rgba(255,255,255,.90);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+}
+
+.charger-card-media {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  background: #f1f5f9;
+  overflow: hidden;
+}
+
+.charger-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.charger-card:hover .charger-card-img {
+  transform: scale(1.05);
+}
+
+.charger-badge-speed {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(4px);
+  color: var(--lime);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  letter-spacing: .02em;
+}
+
+.charger-card-content {
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 /* Top row: name + price pill */
@@ -546,7 +695,7 @@ input[type="range"] {
 .charger-card-area {
   font-size: 0.8rem;
   color: var(--navy-50);
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 /* Tags */
@@ -554,7 +703,7 @@ input[type="range"] {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .tag {
@@ -562,8 +711,8 @@ input[type="range"] {
   color: var(--navy);
   border: 1px solid var(--lime-soft);
   border-radius: var(--r-pill);
-  padding: 4px 11px;
-  font-size: 0.74rem;
+  padding: 3px 10px;
+  font-size: 0.72rem;
   font-weight: 700;
 }
 
@@ -572,12 +721,36 @@ input[type="range"] {
   color: var(--navy-50);
   border: 1px solid var(--gray-light);
   border-radius: var(--r-pill);
-  padding: 4px 11px;
-  font-size: 0.74rem;
+  padding: 3px 10px;
+  font-size: 0.72rem;
   font-weight: 500;
 }
 
 /* Divider */
+.card-divider {
+  border: none;
+  border-top: 1px solid var(--gray-light);
+  margin: 0 0 12px;
+}
+
+/* Booking preview image */
+.booking-preview-media {
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+  border-radius: var(--r-md) var(--r-md) 0 0;
+  margin: -18px -20px 14px;
+}
+
+.booking-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.info-card-content {
+  padding-top: 4px;
+}
 .card-divider {
   border: none;
   border-top: 1px solid var(--gray-light);
@@ -896,6 +1069,31 @@ label {
 /* ── Responsive breakpoints for laptop & desktop ─────────────────── */
 @media (min-width: 640px) {
   body { padding-bottom: 0; }
+
+  /* Hero Banner on tablet/desktop */
+  .hero-banner {
+    flex-direction: row;
+    padding: 36px 40px;
+    margin-bottom: 36px;
+    gap: 36px;
+  }
+
+  .hero-title {
+    font-size: 2.1rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+    max-width: 580px;
+  }
+
+  .hero-visual {
+    max-width: 320px;
+  }
+
+  .charger-card-media {
+    height: 160px;
+  }
 
   /* Desktop nav inside header bar */
   .main-nav {

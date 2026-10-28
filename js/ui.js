@@ -76,6 +76,28 @@ function renderEmptyState(icon, message, showReset) {
   return wrap;
 }
 
+// Map connectors and charger types to relevant 3D imagery
+const CHARGER_IMAGES = Object.freeze([
+  "assets/chargers/charger_ev_car_front.jpg",
+  "assets/chargers/charger_wallbox_home.jpg",
+  "assets/chargers/charger_pedestal_dual.jpg",
+  "assets/chargers/charger_suv_rear.jpg",
+  "assets/chargers/charger_canopy_station.jpg",
+  "assets/chargers/charger_commercial_post.jpg",
+  "assets/chargers/charger_compact_wall.jpg",
+  "assets/chargers/charger_green_pillar.jpg",
+  "assets/chargers/ev_socket_plugged.jpg",
+  "assets/chargers/ev_sedan_white.jpg",
+  "assets/chargers/ev_compact_car.jpg",
+  "assets/chargers/ev_scooter_lime.jpg"
+]);
+
+function getChargerImage(charger) {
+  // Deterministic photo selection based on charger id
+  var idNum = parseInt((charger.id || "1").replace(/\D/g, ""), 10) || 1;
+  return CHARGER_IMAGES[(idNum - 1) % CHARGER_IMAGES.length];
+}
+
 // ---------------------------------------------------------------------------
 // renderChargerCard: build one charger card article.
 // ---------------------------------------------------------------------------
@@ -83,27 +105,44 @@ function renderChargerCard(charger, distKm) {
   var card = el("article", "charger-card");
   card.setAttribute("aria-label", "Charger: " + charger.name);
 
-  // ── Header: name + lime price pill
+  // ── Image Thumbnail Container
+  var imgWrap = el("div", "charger-card-media");
+  var img = document.createElement("img");
+  img.src = getChargerImage(charger);
+  img.alt = charger.name;
+  img.className = "charger-card-img";
+  img.loading = "lazy";
+  imgWrap.appendChild(img);
+
+  // Badge over image
+  var badge = el("span", "charger-badge-speed", charger.powerKw + " kW Fast");
+  imgWrap.appendChild(badge);
+
+  card.appendChild(imgWrap);
+
+  // ── Card Body
+  var body = el("div", "charger-card-content");
+
+  // Header: name + lime price pill
   var header = el("div", "charger-card-header");
   header.appendChild(el("div", "charger-card-name",  charger.name));
   header.appendChild(el("div", "charger-card-price", "₹" + charger.pricePerHour + "/hr"));
-  card.appendChild(header);
+  body.appendChild(header);
 
-  // ── Area
-  card.appendChild(el("div", "charger-card-area", "📍 " + charger.area));
+  // Area
+  body.appendChild(el("div", "charger-card-area", "📍 " + charger.area));
 
-  // ── Tags
+  // Tags
   var meta = el("div", "charger-card-meta");
   meta.appendChild(el("span", "tag",      charger.connector));
-  meta.appendChild(el("span", "tag-muted", charger.powerKw + " kW"));
   meta.appendChild(el("span", "tag-muted", charger.availableFrom + "–" + charger.availableTo));
-  meta.appendChild(el("span", "tag-muted", distKm.toFixed(1) + " km away"));
-  card.appendChild(meta);
+  meta.appendChild(el("span", "tag-muted", distKm.toFixed(1) + " km"));
+  body.appendChild(meta);
 
-  // ── Divider
-  card.appendChild(el("hr", "card-divider"));
+  // Divider
+  body.appendChild(el("hr", "card-divider"));
 
-  // ── Footer: host + Book button
+  // Footer: host + Book button
   var footer = el("div", "charger-card-footer");
   footer.appendChild(el("span", "charger-host", "Host: " + charger.hostName));
 
@@ -112,7 +151,9 @@ function renderChargerCard(charger, distKm) {
   bookBtn.addEventListener("click", function() { showBookingView(charger); });
   footer.appendChild(bookBtn);
 
-  card.appendChild(footer);
+  body.appendChild(footer);
+  card.appendChild(body);
+
   return card;
 }
 
@@ -204,14 +245,24 @@ function showBookingView(charger) {
   var info = document.getElementById("booking-charger-info");
   info.textContent = ""; // safe clear
 
-  info.appendChild(el("div", "info-card-title", "Selected Charger"));
+  // Photo header
+  var photoWrap = el("div", "booking-preview-media");
+  var previewImg = document.createElement("img");
+  previewImg.src = getChargerImage(charger);
+  previewImg.alt = charger.name;
+  previewImg.className = "booking-preview-img";
+  photoWrap.appendChild(previewImg);
+  info.appendChild(photoWrap);
+
+  var infoContent = el("div", "info-card-content");
+  infoContent.appendChild(el("div", "info-card-title", "Selected Charger"));
 
   function addRow(label, value, extraClass) {
     var row = el("div", "info-row");
     row.appendChild(el("span", "info-row-label", label));
     var val = el("span", "info-row-value" + (extraClass ? " " + extraClass : ""), value);
     row.appendChild(val);
-    info.appendChild(row);
+    infoContent.appendChild(row);
   }
 
   addRow("Name",      charger.name);
@@ -219,6 +270,8 @@ function showBookingView(charger) {
   addRow("Connector", charger.connector + " · " + charger.powerKw + " kW");
   addRow("Price",     "₹" + charger.pricePerHour + "/hr", "price-val");
   addRow("Available", charger.availableFrom + " – " + charger.availableTo);
+
+  info.appendChild(infoContent);
 
   // ── Date bounds: today → +7 days
   var today    = new Date();

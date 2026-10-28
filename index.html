@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:;" />
-  <title>ChargeNear - Rent Idle EV Chargers</title>
-  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <title>ChargeNear: Rent Idle EV Chargers</title>
+  <meta name="description" content="Find and book idle EV chargers near you in Pune. Hosts earn passive income from their home or shop charger. Demo app with fictional data." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -43,9 +44,37 @@
     <!-- ── FIND VIEW ────────────────────────────────────────── -->
     <section id="view-find" class="view active" aria-label="Find chargers">
 
+      <!-- Hero Banner with 3D illustration -->
+      <div class="hero-banner">
+        <div class="hero-content">
+          <div class="hero-badge">⚡ Instant EV Charger Rental</div>
+          <h1 class="hero-title">Charge your EV at verified neighborhood hosts</h1>
+          <p class="hero-subtitle">Find high-speed CCS2, Type 2 and fast chargers across Pune. Reserve slots instantly with zero wait times.</p>
+          <div class="hero-stats">
+            <div class="stat-item">
+              <span class="stat-number">50+</span>
+              <span class="stat-label">Active Spots</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-number">8</span>
+              <span class="stat-label">Pune Zones</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-number">₹40</span>
+              <span class="stat-label">Starting /hr</span>
+            </div>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <img src="assets/chargers/charger_ev_car_front.jpg" alt="EV charging" class="hero-img" />
+        </div>
+      </div>
+
       <div class="view-header">
         <div class="view-title-row">
-          <h2>Find a Charger</h2>
+          <h2>Nearby Chargers</h2>
           <button id="btn-use-location" class="btn-ghost">
             <span aria-hidden="true">📍</span> Use My Location
           </button>

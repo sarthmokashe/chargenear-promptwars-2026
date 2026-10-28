@@ -4,7 +4,7 @@
 /* global SEED_CHARGERS */
 
 const STORAGE_KEYS = {
-  CHARGERS: "chargenear_chargers_v2",
+  CHARGERS: "chargenear_chargers_v1",
   BOOKINGS: "chargenear_bookings_v1",
   USER_LOC: "chargenear_userloc_v1"
 };

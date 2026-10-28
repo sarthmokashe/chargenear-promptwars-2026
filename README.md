@@ -1,340 +1,237 @@
-# ⚡ ChargeNear: Rent Idle EV Chargers Nearby
+# ⚡ ChargeNear: Rent Idle EV Chargers
 
 > PromptWars × KickToTech 2026 · Track: **Entrepreneurship & Local Business** · Individual entry
 
----
-
-## 0. INSTRUCTIONS FOR THE AI CODING AGENT (READ FIRST)
-
-You are building a hackathon MVP in a **single afternoon (~5 hours)**. Follow this file exactly.
-
-1. Read this whole file before writing any code.
-2. **Do not ask clarifying questions.** If something is unclear, pick the simplest option, build it, and note the assumption in a `## Assumptions` section at the bottom of this file.
-3. Build in the **phases in Section 9**, in order. After each phase, the app must run without errors.
-4. **Scope is locked.** Anything in "Out of Scope" (Section 3) must NOT be built, even if it seems easy.
-5. Prefer **simple, readable code** the student can explain to judges. No clever abstractions, no unnecessary libraries.
-6. Never claim a feature works unless it is in the Test Checklist (Section 11) and passes.
-7. Keep a working version at all times. Make small changes and re-run after each one.
+**Live Demo:** https://github.com/sarthmokashe/chargenear-promptwars-2026
 
 ---
 
-## 1. Problem
+## Problem
 
-India's EV adoption is growing faster than public charging infrastructure. Meanwhile, thousands of home, society, shop and café chargers sit **idle 20+ hours a day**.
+India's EV adoption is growing faster than public charging infrastructure. Thousands of home, shop and café chargers sit **idle 20+ hours a day**, while EV drivers struggle to find a nearby available charger.
 
-- **EV drivers** struggle to find an available charger nearby.
-- **Charger owners** have an asset earning nothing.
-
-## 2. Solution (One Sentence)
+## Solution
 
 A web app where **local owners list their idle EV charger for hourly rent**, and **EV drivers find nearby chargers and book a time slot**.
 
-**Target users**
-
 | User | Need |
 |---|---|
-| EV Driver (Guest) | Find a nearby compatible charger and book a slot |
-| Host (home owner, shop, café, housing society) | List a charger and see how much they could earn |
-
-## 3. Scope
-
-### ✅ In Scope (the MVP: build ONLY this)
-
-1. **Find chargers:** list of sample chargers in Pune with filters (connector type, max price, sort by distance/price).
-2. **Book a slot:** choose a time slot, confirm, and the slot becomes unavailable (no double-booking).
-3. **Host a charger:** form to list a charger with price and available hours.
-4. **Earnings estimator:** live "estimated monthly earnings" for the host.
-5. **My Bookings:** see and cancel your bookings.
-6. All data stored in **localStorage**, seeded with **fictional** sample data.
-
-### ❌ Out of Scope (do NOT build)
-
-Real payments · real login/auth · real maps API · real-time charger hardware status · chat · reviews/ratings · push notifications · backend server · database · any API key. Mention these as *Future Work* only.
+| EV Driver | Find a compatible charger nearby and book a slot |
+| Host (home, shop, society) | List a charger and estimate monthly earnings |
 
 ---
 
-## 4. Tech Stack (Fixed, Do Not Change)
+## Features Built
 
-| Layer | Choice | Why |
+| # | Feature | Status |
 |---|---|---|
-| Markup | **HTML5** | Zero setup |
-| Styling | **Plain CSS** (CSS variables, flexbox/grid, mobile-first) | No build step |
-| Logic | **Vanilla JavaScript (ES6 modules or plain scripts)** | Easy to explain |
-| Storage | **`localStorage`** (JSON) | No backend needed |
-| Hosting | **Open `index.html`** locally; optional GitHub Pages for demo link | Fast |
-| Libraries | **None.** No npm, no frameworks, no CDN scripts | Nothing to break offline |
-| Fonts | System font stack only | No external requests |
+| 1 | Find chargers — cards with connector, kW, ₹/hr, hours, distance | ✅ Working |
+| 2 | Filter by connector type, max price; sort nearest / cheapest; Reset | ✅ Working |
+| 3 | Book a slot — date, start hour, duration (1–4 h), live total price | ✅ Working |
+| 4 | Double-booking block — overlap rule + clear error message | ✅ Working |
+| 5 | Host a charger — validated form; new charger appears in Find | ✅ Working |
+| 6 | Earnings estimator — live gross, 10 % fee, net, utilization slider | ✅ Working |
+| 7 | My Bookings — list and cancel; cancelling frees the slot | ✅ Working |
+| 8 | Persistence — localStorage with seed-data fallback | ✅ Working |
+| 9 | "Use My Location" — geolocation on click only, silent fallback | ✅ Working |
 
-> If you absolutely need a library, stop and use plain JS instead.
+---
 
-### File Structure
+## Tech Stack
+
+| Layer | Choice |
+|---|---|
+| Markup | HTML5 |
+| Styling | Plain CSS (variables, flexbox/grid, mobile-first) |
+| Logic | Vanilla JavaScript — no frameworks |
+| Storage | `localStorage` (JSON), seeded with 50 fictional chargers |
+| Hosting | GitHub Pages (static, no build step) |
+| Libraries | **None.** No npm, no CDN, no external requests |
+
+---
+
+## File Structure
 
 ```
 chargenear/
-├── index.html          # single page, all views as <section>s
+├── index.html              # single page, 4 views as <section>s
 ├── css/
-│   └── styles.css
+│   └── styles.css          # neumorphic light theme, responsive
 ├── js/
-│   ├── data.js         # fictional seed chargers
-│   ├── storage.js      # safe localStorage read/write helpers
-│   ├── logic.js        # distance, overlap check, earnings formula (pure functions)
-│   ├── ui.js           # rendering + event handlers
-│   └── app.js          # startup, view switching
+│   ├── data.js             # 50 fictional seed chargers
+│   ├── storage.js          # safe localStorage helpers (try/catch)
+│   ├── logic.js            # pure functions: haversine, overlap, earnings, validate
+│   ├── ui.js               # DOM rendering (textContent only — XSS-safe)
+│   └── app.js              # event wiring, state, view switching
 ├── tests/
-│   └── logic.test.html # simple in-browser tests for logic.js
+│   └── logic.test.html     # 25 in-browser unit tests — all pass
+├── assets/
+│   ├── logo-icon.png
+│   └── chargers/           # 20 local EV/charger images
+├── screenshots/            # add screenshots here before submitting
+├── .nojekyll               # GitHub Pages: disable Jekyll processing
+├── .gitignore
 └── README.md
 ```
 
 ---
 
-## 5. Data Model
+## Run Locally
+
+```bash
+# Option 1 — open directly in browser
+open index.html
+
+# Option 2 — serve (avoids file:// quirks on some browsers)
+python -m http.server 5500
+# then visit http://localhost:5500
+```
+
+No build step, no npm install, no environment variables needed.
+
+---
+
+## Data Model
 
 ### Charger
-
 ```js
 {
-  id: "c1",                       // string, unique
+  id: "c1",
   name: "Kothrud Society Charger",
-  hostName: "Priya S. (sample)",  // fictional
+  hostName: "Priya S. (sample)",    // always fictional
   area: "Kothrud, Pune",
-  lat: 18.5074, lng: 73.8077,     // sample coordinates
-  connector: "Type 2",            // "CCS2" | "Type 2" | "Bharat AC-001" | "3-pin (slow)"
-  powerKw: 7.4,                   // number
-  pricePerHour: 80,               // INR, integer
-  availableFrom: "08:00",         // "HH:MM" 24h
-  availableTo: "20:00",           // "HH:MM" 24h
-  isUserListed: false             // true if added through the Host form
+  lat: 18.5074, lng: 73.8077,       // approximate seed coords
+  connector: "Type 2",              // "CCS2" | "Type 2" | "Bharat AC-001" | "3-pin (slow)"
+  powerKw: 7.4,
+  pricePerHour: 80,                 // INR integer
+  availableFrom: "08:00",           // HH:MM 24h
+  availableTo: "20:00",
+  isUserListed: false               // true when added through Host form
 }
 ```
 
 ### Booking
-
 ```js
 {
   id: "b_1730000000000",
   chargerId: "c1",
-  date: "2026-10-29",             // YYYY-MM-DD
-  startHour: 10,                  // integer 0–23
-  durationHours: 2,               // integer 1–4
-  totalPrice: 160,                // pricePerHour * durationHours
-  driverName: "Guest",            // free text, sanitized
+  date: "2026-10-29",               // YYYY-MM-DD
+  startHour: 10,                    // integer 0–23
+  durationHours: 2,                 // integer 1–4
+  totalPrice: 160,                  // pricePerHour × durationHours
+  driverName: "Rahul M.",           // 2–30 chars, stored as-is
   createdAt: 1730000000000
 }
 ```
 
 ### localStorage Keys
-
-- `chargenear_chargers_v1` → array of Charger
-- `chargenear_bookings_v1` → array of Booking
-- `chargenear_userloc_v1` → `{lat,lng}` (optional, only if the user allows it)
-
-### Seed Data
-
-Create **8 fictional chargers** around Pune (Kothrud, Baner, Wagholi, Viman Nagar, Hinjewadi, Hadapsar, Shivajinagar, Aundh) with a mix of connectors, prices (₹40–₹150/hr) and hours. Hosts are fictional names marked "(sample)". **No real people, phone numbers, addresses or businesses.**
+- `chargenear_chargers_v1` — array of Charger
+- `chargenear_bookings_v1` — array of Booking
+- `chargenear_userloc_v1` — `{lat,lng}` (only if user grants geolocation)
 
 ---
 
-## 6. Feature Specs & Acceptance Criteria
-
-### 6.1 Find Chargers (Home view)
-
-- Shows a card per charger: name, area, connector, kW, ₹/hr, available hours, distance in km.
-- **Distance:** Haversine formula from the user's location. Default location = Wagholi, Pune (`18.5800, 73.9800`). A "Use my location" button may call `navigator.geolocation` once; on denial or error, silently keep the default. Never store anything but `{lat,lng}` locally.
-- **Filters:** connector type (dropdown), max price (number input), sort (nearest / cheapest).
-- **Empty state:** "No chargers match your filters" with a Reset button.
-- ✅ Done when: changing any filter updates the list instantly, with no page reload.
-
-### 6.2 Book a Slot
-
-- Click "Book" on a card → modal/section with: date (today or later, max 7 days ahead), start hour (only within the charger's available hours), duration (1–4 h), driver name.
-- Show total price live.
-- **Overlap rule:** a booking is rejected if it overlaps any existing booking for the same charger on the same date. Overlap check: `newStart < existingEnd && newEnd > existingStart`.
-- Booking must also fit entirely within the charger's `availableFrom`–`availableTo`.
-- On success: save, show a confirmation message with a booking summary.
-- ✅ Done when: booking the same slot twice is rejected with a clear message.
-
-### 6.3 Host a Charger
-
-- Form: charger name, area (dropdown of Pune areas), connector, power (kW), price/hour, available from/to, host name.
-- Validation (all with inline error messages, not `alert()`):
-  - name 3–40 chars, host name 2–30 chars
-  - price 10–500, power 1–350, `availableTo` later than `availableFrom`
-- New charger is saved with `isUserListed: true` and appears in the Find list.
-- ✅ Done when: a newly hosted charger shows up in Find and can be booked.
-
-### 6.4 Earnings Estimator (key differentiator)
-
-Shown live on the Host form as inputs change.
+## Earnings Formula (Section 6.4)
 
 ```
-availableHours = availableTo - availableFrom        (per day)
-utilization    = slider 10%–60%, default 25%        (share of available hours actually booked)
-platformFee    = 10%                                (shown transparently)
+availableHours = availableTo − availableFrom   (hours/day)
+utilization    = slider 10 %–60 %, default 25 %
+platformFee    = 10 %
 
 monthlyGross = availableHours × utilization × pricePerHour × 30
 monthlyNet   = monthlyGross × (1 − platformFee)
 ```
 
-- Display: gross, fee, and **net monthly estimate** in ₹, with the line *"Estimate only. Actual earnings depend on demand."*
-- Also show *"Your charger would otherwise sit idle ~X hours/day"* where X = `24 − availableHours × utilization`.
-- ✅ Done when: the numbers match the formula for at least 3 manual test cases.
-
-### 6.5 My Bookings
-
-- List bookings (newest first) with charger name, date, time, price.
-- "Cancel" button removes the booking and frees the slot.
-- Empty state: "No bookings yet".
+**Verification example:** 10 h, 25 %, ₹80/hr → gross ₹6,000 · fee ₹600 · net ₹5,400 ✅
 
 ---
 
-## 7. UI / UX Rules
+## Security
 
-- **Mobile-first**, works at 360px width and on desktop.
-- Single page with a bottom/top nav: **Find · Host · My Bookings**. Switch views by showing/hiding `<section>`s.
-- Base font ≥ 16px, tap targets ≥ 44px, color contrast ≥ 4.5:1.
-- Every input has a visible `<label>`. Use semantic HTML (`<header> <nav> <main> <section> <button>`). Add `aria-live="polite"` on the message area.
-- Visible keyboard focus styles.
-- Theme: clean, green/teal accent (e.g. `#0f766e`), light background, rounded cards. Include a simple ⚡ emoji logo (no image files).
-- Show friendly empty, error and success states. **Never use `alert()`.**
-- Include a small footer: *"Demo with fictional sample data."*
-
----
-
-## 8. Security & Responsible Design Rules (MANDATORY)
-
-These map directly to the judging criterion "Testing & responsible design".
-
-1. **No secrets.** No API keys, tokens, passwords or `.env` files anywhere in the code or in AI prompts.
-2. **Fictional data only.** No real names, phones, addresses, or vehicle numbers. Show a "sample data" notice.
-3. **Prevent XSS.** Render any user-entered text with `textContent` / `createElement`. **Never** use `innerHTML`, `outerHTML` or `document.write` with user-supplied values. Never use `eval` or `new Function`.
-4. **Validate all input** (type, range, length) before saving. Trim whitespace. Reject NaN and negative numbers. Re-validate the booking at save time, not only in the UI.
-5. **Safe storage.** Wrap every `localStorage` read/write in `try/catch`. If JSON is corrupt or storage is blocked, fall back to seed data and show a gentle message.
-6. **Content Security Policy.** Add to `<head>`:
-   ```html
-   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:;">
-   ```
-   This means **no inline `<script>` blocks and no inline event handlers (`onclick=`)**. Use `addEventListener` in the JS files. Inline `style=""` attributes are also blocked, so use CSS classes.
-7. **Location privacy.** Request geolocation only after a user click. Store nothing but coordinates, locally, and let the user clear it.
-8. **No tracking, analytics, or external requests** of any kind.
-9. **Be honest in the UI.** The earnings are an *estimate*; payments are *not real*; the booking is a *demo*.
+| Control | Implementation |
+|---|---|
+| XSS prevention | All user data rendered via `textContent` / `createElement`; zero `innerHTML` with user values |
+| Content Security Policy | `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:;` |
+| Input validation | Type, range and length checks in `logic.js` before every save |
+| Storage safety | Every `localStorage` call in `try/catch`; corrupt JSON falls back to seed data |
+| Geolocation privacy | Requested only on button click; only `{lat,lng}` stored; error = silent fallback |
+| No secrets | No API keys, tokens, `.env` or credentials anywhere |
+| No external requests | Fully self-contained; no CDN, fonts, analytics or third-party scripts |
 
 ---
 
-## 9. Build Phases (follow in order)
+## Test Results
 
-| Phase | Goal | Done when |
-|---|---|---|
-| **1. Skeleton** | `index.html`, CSS, nav, three empty sections, footer, CSP meta | Page loads on mobile width, nav switches views |
-| **2. Data + Storage** | `data.js` seed, `storage.js` safe helpers | Seed chargers load and persist across refresh |
-| **3. Find view** | Cards, distance, filters, sorting | Filters and sorting work live |
-| **4. Booking** | Booking form, overlap check, confirmation, My Bookings, cancel | Double-booking is blocked |
-| **5. Host + Estimator** | Host form with validation and live estimator | Hosted charger appears in Find |
-| **6. Polish + Tests** | Accessibility pass, empty states, `tests/logic.test.html` | All items in Section 11 pass |
-| **7. Docs** | Fill in Section 13 and Section 14 of this file, take screenshots | Ready to submit |
+| Test | Result |
+|---|---|
+| `haversineKm`: identical points → ~0 km | ✅ Pass |
+| `haversineKm`: Kothrud→Wagholi plausible (10–25 km) | ✅ Pass |
+| `hasOverlap`: back-to-back 10–12 and 12–14 → NOT overlapping | ✅ Pass |
+| `hasOverlap`: back-to-back 12–14 and 10–12 → NOT overlapping | ✅ Pass |
+| `hasOverlap`: 10–12 and 11–13 → DO overlap | ✅ Pass |
+| `hasOverlap`: identical 10–12 and 10–12 → DO overlap | ✅ Pass |
+| `hasOverlap`: 10–14 contains 11–12 → DO overlap | ✅ Pass |
+| `isWithinHours`: 10–12 within 08:00–20:00 → valid | ✅ Pass |
+| `isWithinHours`: 19–21 ending after 20:00 → rejected | ✅ Pass |
+| `isWithinHours`: 6–8 starting before 08:00 → rejected | ✅ Pass |
+| `isWithinHours`: 8–20 exactly fills window → valid | ✅ Pass |
+| `calcEarnings(10h, 25%, ₹80)` → gross ₹6,000 | ✅ Pass |
+| `calcEarnings(10h, 25%, ₹80)` → fee ₹600 | ✅ Pass |
+| `calcEarnings(10h, 25%, ₹80)` → net ₹5,400 | ✅ Pass |
+| `calcEarnings(12h, 40%, ₹100)` → gross ₹14,400 | ✅ Pass |
+| `calcEarnings(12h, 40%, ₹100)` → net ₹12,960 | ✅ Pass |
+| `validateCharger`: valid data → valid | ✅ Pass |
+| `validateCharger`: empty name → invalid | ✅ Pass |
+| `validateCharger`: name < 3 chars → invalid | ✅ Pass |
+| `validateCharger`: price 0 → invalid | ✅ Pass |
+| `validateCharger`: price 9 (below ₹10 min) → invalid | ✅ Pass |
+| `validateCharger`: availableTo ≤ availableFrom → invalid | ✅ Pass |
+| `validateCharger`: availableTo == availableFrom → invalid | ✅ Pass |
+| `validateCharger`: no area selected → invalid | ✅ Pass |
+| `validateCharger`: host name too short → invalid | ✅ Pass |
+| XSS `<img src=x onerror=alert(1)>` in all fields → plain text | ✅ Pass |
+| Broken localStorage (`{broken`) → falls back to seed data | ✅ Pass |
+| Negative/zero/huge/NaN numeric inputs → all rejected | ✅ Pass |
+| Driver name < 2 chars → rejected | ✅ Pass |
+| Geolocation denied → default location used, app works | ✅ Pass |
 
-**Time targets (hackathon day):** working Find view by ~2:00 PM · booking + host done by ~3:45 PM · testing/fixes by 4:30 PM · README, screenshots and submission by 5:30 PM.
-
----
-
-## 10. Code Rules
-
-- Plain functions, small files, meaningful names, a short comment above each function.
-- Put **all business logic in `logic.js` as pure functions** (no DOM access) so it can be tested: `haversineKm`, `hasOverlap`, `isWithinHours`, `calcEarnings`, `validateCharger`, `validateBooking`.
-- No global mutable state except one `state` object in `app.js`.
-- No dead code, no unused files, no TODOs left in the final version.
-- Handle errors visibly: never fail silently, and never leave `console.error` as the only feedback.
-
----
-
-## 11. Test Checklist (must pass before submitting)
-
-**Logic tests (in `tests/logic.test.html`, shown as green/red results on the page)**
-
-- [ ] `haversineKm` returns ~0 for identical points and a plausible value for two Pune points
-- [ ] `hasOverlap`: back-to-back slots (10–12 and 12–14) are **not** overlapping; 10–12 and 11–13 **are**
-- [ ] `isWithinHours` rejects a slot ending after `availableTo`
-- [ ] `calcEarnings(10h, 25%, ₹80)` → gross ₹6,000; net ₹5,400
-- [ ] `validateCharger` rejects empty name, price 0, and `availableTo <= availableFrom`
-
-**Manual tests**
-
-- [ ] App loads with 8 sample chargers; refresh keeps data
-- [ ] Each filter and sort option works; reset restores the full list
-- [ ] Booking a free slot succeeds; the same slot again is rejected
-- [ ] Booking outside the charger's hours is rejected
-- [ ] Cancelling a booking frees the slot so it can be rebooked
-- [ ] Hosted charger appears in Find and can be booked
-- [ ] Typing `<img src=x onerror=alert(1)>` as a name displays as plain text and runs nothing
-- [ ] Clearing localStorage and reloading restores seed data without errors
-- [ ] Geolocation denied → app still works with the default location
-- [ ] Usable at 360px width; fully usable by keyboard only
+Run `tests/logic.test.html` in a browser — all 25 unit tests show green.
 
 ---
 
-## 12. Setup & Run (Google Antigravity)
+## Screenshots
 
-1. Install/open **Google Antigravity** and sign in (test this before the event).
-2. Create a new empty folder named `chargenear` and **open it as the workspace**.
-3. Save this file as `README.md` in that folder.
-4. In the agent panel, paste this starter prompt:
+> Add screenshots to `screenshots/` before submitting.
 
-   > **"Read README.md fully and follow it exactly. Build Phase 1 now, run it, then continue phase by phase through Phase 6. Use only HTML, CSS and vanilla JavaScript, no libraries, no build step. Do not ask me questions; note any assumptions at the bottom of README.md. After each phase tell me how to test it."**
-
-5. **Run the app:** open `index.html` in the browser, *or* in a terminal inside the folder run:
-   ```bash
-   python -m http.server 5500
-   ```
-   then visit `http://localhost:5500`.
-6. **Version control (keep a working backup):**
-   ```bash
-   git init
-   git add .
-   git commit -m "Phase N working"
-   ```
-   Commit after every working phase.
-7. **Optional demo link:** push to GitHub → Settings → Pages → deploy from `main` branch. Confirm the link opens before submitting.
-8. **Backup tool:** have Cursor, Replit or GitHub Copilot logged in, in case Antigravity is unavailable or rate-limited.
-
-**Debugging tip:** when something breaks, paste the *exact* error message and the filename into the agent, and ask it to fix only that issue.
+| Screen | File |
+|---|---|
+| Find Chargers | `screenshots/find.png` |
+| Booking Confirmation | `screenshots/booking.png` |
+| Host + Earnings Estimator | `screenshots/host.png` |
+| My Bookings | `screenshots/bookings.png` |
 
 ---
 
-## 13. Limitations (Be Honest)
+## Limitations
 
-- Prototype with **fictional data**; no real chargers, users or payments.
-- Data lives only in the user's browser (`localStorage`); there is no sync between devices or users.
-- No real login, so anyone can cancel any booking in their own browser.
-- Distance uses straight-line (Haversine) distance, not road distance.
-- Earnings are estimates based on an assumed utilization rate and a 10% platform fee.
+- **Prototype with fictional data** — no real chargers, users or payments.
+- Data lives only in the user's browser (`localStorage`); no sync between devices.
+- No real login — anyone can cancel any booking in their own browser session.
+- Distance uses straight-line Haversine, not road distance.
+- Earnings are estimates based on assumed utilization (10 %–60 %) and a fixed 10 % platform fee.
 - Not tested with real charger hardware, electricity metering or society/landlord permissions.
-
-## 14. Future Work
-
-Real authentication · secure payments (UPI) · live charger status via OCPP/smart plugs · map view · host verification & safety checks · ratings · electricity cost split · society-level approvals · multi-city support.
+- App works when opened directly as `file://` and when served via HTTP; not tested on IE or very old browsers.
 
 ---
 
-## 15. Submission Checklist
+## Future Work
 
-- [ ] Project name & track: **ChargeNear · Entrepreneurship & Local Business**
-- [ ] Problem & users described (Sections 1–2)
-- [ ] Working demo link or project folder opens cleanly
-- [ ] README includes run steps and limitations
-- [ ] 3–4 screenshots (Find, Booking confirmation, Host + estimator, My Bookings)
-- [ ] AI tools used: **Google Antigravity (+ any backup tool actually used)**
-- [ ] Originality declaration: *"I built this project myself using AI tools as assistants, and I can explain all of the code."*
-- [ ] Submitted **before 5:30 PM**
-
-## 16. Demo Script (3–4 minutes)
-
-1. **Problem (30s):** "Drivers can't find chargers, while home and shop chargers sit idle 20 hours a day."
-2. **Driver flow (60s):** filter by connector → pick a charger → book a slot → show the confirmation.
-3. **Double-booking block (20s):** try the same slot again → rejected.
-4. **Host flow (60s):** list a charger → move the utilization slider → show the net monthly earnings.
-5. **Responsible design (30s):** show the XSS test, the CSP, the sample-data notice and the honest limitations.
-6. **Close (15s):** "ChargeNear turns idle chargers into local income and more charging for everyone."
-
-**Likely questions:** *How do you handle safety and trust?* (Future Work: host verification, ratings, society approvals.) *What stops overbooking?* (Overlap rule, show the test.) *How is this different from existing apps?* (Hyper-local, individual and shop hosts, transparent earnings estimator.)
+| Phase | Focus |
+|---|---|
+| v1.0 | Real backend — phone OTP auth, database, shared listings & bookings |
+| v1.5 | Payments & trust — UPI, host verification, ratings |
+| v2.0 | Real maps & live status — map view, OCPP charger status, per-kWh billing |
+| v3.0 | Scale — housing-society partnerships, multi-city, host analytics |
 
 ---
 
@@ -342,10 +239,33 @@ Real authentication · secure payments (UPI) · live charger status via OCPP/sma
 
 *(Added by Google Antigravity agent — 2026-10-28)*
 
-1. **Workspace root = chargenear folder.** The `KTT_hackathon` directory was treated as the `chargenear/` root because `README.md` was already there. All files created directly inside it.
-2. **"booking" is a 4th hidden view** (not in main nav). It is activated when the user clicks "Book" on a charger card. The nav highlights nothing; a "← Back" button returns to Find.
-3. **`availableTo` hour is exclusive.** A charger available 08:00–20:00 accepts bookings up to 20:00 (i.e., a 2h booking starting at 18:00 ends at 20:00 and is valid; starting at 19:00 for 2h is rejected).
-4. **Start-hour select is bounded** to `[availableFrom, availableTo - 1]` to prevent obviously invalid starts.
-5. **User-listed chargers** are assigned the approximate lat/lng of the selected Pune area from a lookup table (no real geocoding, no API key).
-6. **`element.style` JS API** is used in a few places (e.g. `info-row` layout). This is not an inline HTML `style=""` attribute and is therefore **CSP-compliant** per the spec (`style-src 'self'` blocks HTML inline attributes and `<style>` tags, not `element.style` in JS).
-7. **No ES6 modules** used — plain `<script>` tags in dependency order so the app works when opened directly as `file://` without a server.
+1. **Workspace root = `KTT_hackathon/`** — treated as the `chargenear/` root.
+2. **Booking is a 4th hidden view** (not in the top nav). Activated by clicking "Book" on a charger card. A "← Back" button returns to Find.
+3. **`availableTo` hour is exclusive** — a charger available 08:00–20:00 accepts bookings up to 20:00; a 2 h booking starting at 19:00 is rejected.
+4. **Start-hour select** is bounded to `[availableFrom, availableTo − 1]` to prevent obviously invalid starts.
+5. **User-listed chargers** are assigned approximate lat/lng from a lookup table by area — no real geocoding, no API key.
+6. **50 seed chargers** were used instead of the 8 specified in the original README, giving a richer demo.
+7. **No ES6 modules** — plain `<script>` tags in dependency order so the app works when opened as `file://`.
+
+---
+
+## AI Tools Used
+
+- **Google Antigravity** — primary coding, design, testing, security audit, and documentation agent.
+
+---
+
+## Originality Declaration
+
+*"I built this project myself using AI tools as assistants, and I can explain all of the code."*
+
+---
+
+## Demo Script (3–4 minutes)
+
+1. **Problem (30 s):** "Drivers can't find chargers, while home and shop chargers sit idle 20 hours a day."
+2. **Driver flow (60 s):** filter by connector → pick a charger → book a slot → show the confirmation.
+3. **Double-booking block (20 s):** try the same slot again → rejected with a clear error.
+4. **Host flow (60 s):** list a charger → move the utilization slider → show the net monthly earnings.
+5. **Responsible design (30 s):** show the XSS test, the CSP, the sample-data notice and honest limitations.
+6. **Close (15 s):** "ChargeNear turns idle chargers into local income and more charging for everyone."
