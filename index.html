@@ -5,193 +5,306 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:;" />
-  <title>⚡ ChargeNear</title>
+  <title>ChargeNear - Rent Idle EV Chargers</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
 
-  <header>
-    <div class="logo">⚡ ChargeNear</div>
-    <p class="tagline">Rent idle EV chargers nearby · Pune</p>
+  <!-- ══ HEADER & DESKTOP NAV ═══════════════════════════════════ -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <img src="assets/logo-icon.png" alt="ChargeNear Logo" class="logo-img" />
+        <span class="logo-text"><span class="logo-charge">Charge</span><span class="logo-near">Near</span></span>
+      </div>
+      <p class="tagline">Rent idle EV chargers · Pune</p>
+      <!-- Nav on desktop integrated right into header -->
+      <nav class="main-nav" aria-label="Main navigation">
+        <button class="nav-btn active" data-view="find">
+          <span class="nav-icon" aria-hidden="true">🔍</span>
+          <span class="nav-label">Find</span>
+        </button>
+        <button class="nav-btn" data-view="host">
+          <span class="nav-icon" aria-hidden="true">🏠</span>
+          <span class="nav-label">Host</span>
+        </button>
+        <button class="nav-btn" data-view="bookings">
+          <span class="nav-icon" aria-hidden="true">📋</span>
+          <span class="nav-label">My Bookings</span>
+        </button>
+      </nav>
+    </div>
   </header>
 
-  <nav aria-label="Main navigation">
-    <button class="nav-btn active" data-view="find">🔍 Find</button>
-    <button class="nav-btn" data-view="host">🏠 Host</button>
-    <button class="nav-btn" data-view="bookings">📋 My Bookings</button>
-  </nav>
-
+  <!-- ══ MAIN ════════════════════════════════════════════════ -->
   <main>
 
-    <!-- ── FIND VIEW ─────────────────────────────────────── -->
+    <!-- ── FIND VIEW ────────────────────────────────────────── -->
     <section id="view-find" class="view active" aria-label="Find chargers">
 
-      <div class="section-header">
-        <h2>Find a Charger</h2>
-        <button id="btn-use-location" class="btn-secondary">📍 Use My Location</button>
-      </div>
-
-      <div class="notice" role="note">
-        📋 Demo with fictional sample data. No real chargers or payments.
-      </div>
-
-      <div class="filters" role="search" aria-label="Filter chargers">
-        <div class="filter-field">
-          <label for="filter-connector">Connector</label>
-          <select id="filter-connector">
-            <option value="">All types</option>
-            <option value="CCS2">CCS2</option>
-            <option value="Type 2">Type 2</option>
-            <option value="Bharat AC-001">Bharat AC-001</option>
-            <option value="3-pin (slow)">3-pin (slow)</option>
-          </select>
+      <div class="view-header">
+        <div class="view-title-row">
+          <h2>Find a Charger</h2>
+          <button id="btn-use-location" class="btn-ghost">
+            <span aria-hidden="true">📍</span> Use My Location
+          </button>
         </div>
-
-        <div class="filter-field">
-          <label for="filter-price">Max Price (₹/hr)</label>
-          <input type="number" id="filter-price" placeholder="Any" min="0" max="500" />
-        </div>
-
-        <div class="filter-field">
-          <label for="filter-sort">Sort by</label>
-          <select id="filter-sort">
-            <option value="distance">Nearest first</option>
-            <option value="price">Cheapest first</option>
-          </select>
-        </div>
-
-        <div class="filter-field filter-reset">
-          <button id="btn-reset-filters" class="btn-secondary">Reset</button>
+        <div class="notice" role="note">
+          📋 Sample data only — no real chargers or payments.
         </div>
       </div>
 
+      <!-- Filters -->
+      <div class="filters-card" role="search" aria-label="Filter chargers">
+        <div class="filter-row">
+          <div class="filter-field">
+            <label for="filter-connector">Connector</label>
+            <div class="input-neu">
+              <select id="filter-connector">
+                <option value="">All types</option>
+                <option value="CCS2">CCS2</option>
+                <option value="Type 2">Type 2</option>
+                <option value="Bharat AC-001">Bharat AC-001</option>
+                <option value="3-pin (slow)">3-pin (slow)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="filter-field">
+            <label for="filter-price">Max ₹/hr</label>
+            <div class="input-neu">
+              <input type="number" id="filter-price" placeholder="Any" min="0" max="500" />
+            </div>
+          </div>
+
+          <div class="filter-field">
+            <label for="filter-sort">Sort by</label>
+            <div class="input-neu">
+              <select id="filter-sort">
+                <option value="distance">Nearest first</option>
+                <option value="price">Cheapest first</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="filter-field filter-reset">
+            <button id="btn-reset-filters" class="btn-secondary">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charger list rendered by JS -->
       <div id="charger-list" aria-live="polite" aria-label="Charger listings"></div>
+
     </section>
 
-    <!-- ── BOOKING VIEW ───────────────────────────────────── -->
+    <!-- ── BOOKING VIEW ──────────────────────────────────────── -->
     <section id="view-booking" class="view" aria-label="Book a slot">
 
-      <div class="section-header">
-        <button id="btn-back-find" class="btn-secondary">← Back</button>
-        <h2 id="booking-title">Book a Slot</h2>
+      <div class="view-header">
+        <div class="view-title-row">
+          <button id="btn-back-find" class="btn-back">← Back</button>
+          <h2 id="booking-title">Book a Slot</h2>
+        </div>
       </div>
 
+      <!-- Charger summary card (populated by JS) -->
       <div id="booking-charger-info" class="info-card" aria-label="Selected charger details"></div>
 
-      <form id="booking-form" novalidate>
-        <label for="booking-date">Date</label>
-        <input type="date" id="booking-date" required />
+      <!-- Booking form -->
+      <div class="form-card">
+        <form id="booking-form" novalidate>
 
-        <label for="booking-hour">Start Hour</label>
-        <select id="booking-hour" required></select>
+          <div class="form-group">
+            <label for="booking-date">Date</label>
+            <div class="input-neu">
+              <input type="date" id="booking-date" required />
+            </div>
+          </div>
 
-        <label for="booking-duration">Duration</label>
-        <select id="booking-duration" required>
-          <option value="1">1 hour</option>
-          <option value="2">2 hours</option>
-          <option value="3">3 hours</option>
-          <option value="4">4 hours</option>
-        </select>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="booking-hour">Start Hour</label>
+              <div class="input-neu">
+                <select id="booking-hour" required></select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="booking-duration">Duration</label>
+              <div class="input-neu">
+                <select id="booking-duration" required>
+                  <option value="1">1 hour</option>
+                  <option value="2">2 hours</option>
+                  <option value="3">3 hours</option>
+                  <option value="4">4 hours</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
-        <label for="booking-name">Your Name</label>
-        <input type="text" id="booking-name" placeholder="e.g. Rahul M."
-               maxlength="50" autocomplete="name" required />
+          <div class="form-group">
+            <label for="booking-name">Your Name</label>
+            <div class="input-neu">
+              <input type="text" id="booking-name" placeholder="e.g. Rahul M."
+                     maxlength="50" autocomplete="name" required />
+            </div>
+          </div>
 
-        <div class="price-preview" id="booking-price-preview" aria-live="polite"></div>
+          <!-- Live total (populated by JS) -->
+          <div class="price-preview" id="booking-price-preview" aria-live="polite"></div>
 
-        <div class="form-msg" id="booking-msg" aria-live="polite"></div>
+          <div class="form-msg" id="booking-msg" aria-live="polite"></div>
 
-        <button type="submit" class="btn-primary">Confirm Booking</button>
-      </form>
-    </section>
-
-    <!-- ── HOST VIEW ─────────────────────────────────────── -->
-    <section id="view-host" class="view" aria-label="List your charger">
-      <h2>Host Your Charger</h2>
-      <div class="notice" role="note">
-        📋 Demo listing. No real transactions or data leaves your device.
+          <button type="submit" class="btn-primary btn-full">⚡ Confirm Booking</button>
+        </form>
       </div>
 
-      <form id="host-form" novalidate>
-
-        <label for="host-charger-name">Charger Name</label>
-        <input type="text" id="host-charger-name" placeholder="e.g. My Home Charger"
-               minlength="3" maxlength="40" required />
-        <div class="field-error" id="err-host-name" aria-live="polite"></div>
-
-        <label for="host-area">Area</label>
-        <select id="host-area" required>
-          <option value="">Select area in Pune</option>
-          <option value="Kothrud, Pune">Kothrud</option>
-          <option value="Baner, Pune">Baner</option>
-          <option value="Wagholi, Pune">Wagholi</option>
-          <option value="Viman Nagar, Pune">Viman Nagar</option>
-          <option value="Hinjewadi, Pune">Hinjewadi</option>
-          <option value="Hadapsar, Pune">Hadapsar</option>
-          <option value="Shivajinagar, Pune">Shivajinagar</option>
-          <option value="Aundh, Pune">Aundh</option>
-        </select>
-        <div class="field-error" id="err-host-area" aria-live="polite"></div>
-
-        <label for="host-connector">Connector Type</label>
-        <select id="host-connector" required>
-          <option value="CCS2">CCS2</option>
-          <option value="Type 2">Type 2</option>
-          <option value="Bharat AC-001">Bharat AC-001</option>
-          <option value="3-pin (slow)">3-pin (slow)</option>
-        </select>
-
-        <label for="host-power">Power (kW)</label>
-        <input type="number" id="host-power" placeholder="e.g. 7.4"
-               min="1" max="350" step="0.1" required />
-        <div class="field-error" id="err-host-power" aria-live="polite"></div>
-
-        <label for="host-price">Price per Hour (₹)</label>
-        <input type="number" id="host-price" placeholder="e.g. 80"
-               min="10" max="500" required />
-        <div class="field-error" id="err-host-price" aria-live="polite"></div>
-
-        <label for="host-from">Available From</label>
-        <input type="time" id="host-from" value="08:00" required />
-
-        <label for="host-to">Available To</label>
-        <input type="time" id="host-to" value="20:00" required />
-        <div class="field-error" id="err-host-hours" aria-live="polite"></div>
-
-        <label for="host-hostname">Your Name</label>
-        <input type="text" id="host-hostname" placeholder="e.g. Priya S."
-               minlength="2" maxlength="30" required />
-        <div class="field-error" id="err-host-hostname" aria-live="polite"></div>
-
-        <!-- Earnings Estimator -->
-        <div class="estimator">
-          <h3>💰 Earnings Estimator</h3>
-          <label for="host-utilization">
-            Utilization: <span id="util-value">25</span>%
-          </label>
-          <input type="range" id="host-utilization" min="10" max="60" value="25"
-                 aria-label="Utilization percentage" />
-          <div class="estimator-results" id="estimator-results" aria-live="polite"></div>
-        </div>
-
-        <div class="form-msg" id="host-msg" aria-live="polite"></div>
-        <button type="submit" class="btn-primary">List My Charger</button>
-      </form>
     </section>
 
-    <!-- ── MY BOOKINGS VIEW ──────────────────────────────── -->
+    <!-- ── HOST VIEW ─────────────────────────────────────────── -->
+    <section id="view-host" class="view" aria-label="List your charger">
+
+      <div class="view-header">
+        <h2>Host Your Charger</h2>
+        <div class="notice" role="note">
+          📋 Demo listing — no real transactions, data stays on your device.
+        </div>
+      </div>
+
+      <div class="form-card">
+        <form id="host-form" novalidate>
+
+          <div class="form-group">
+            <label for="host-charger-name">Charger Name</label>
+            <div class="input-neu">
+              <input type="text" id="host-charger-name"
+                     placeholder="e.g. My Home Charger"
+                     minlength="3" maxlength="40" required />
+            </div>
+            <div class="field-error" id="err-host-name" aria-live="polite"></div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="host-area">Area</label>
+              <div class="input-neu">
+                <select id="host-area" required>
+                  <option value="">Select area</option>
+                  <option value="Kothrud, Pune">Kothrud</option>
+                  <option value="Baner, Pune">Baner</option>
+                  <option value="Wagholi, Pune">Wagholi</option>
+                  <option value="Viman Nagar, Pune">Viman Nagar</option>
+                  <option value="Hinjewadi, Pune">Hinjewadi</option>
+                  <option value="Hadapsar, Pune">Hadapsar</option>
+                  <option value="Shivajinagar, Pune">Shivajinagar</option>
+                  <option value="Aundh, Pune">Aundh</option>
+                </select>
+              </div>
+              <div class="field-error" id="err-host-area" aria-live="polite"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="host-connector">Connector</label>
+              <div class="input-neu">
+                <select id="host-connector" required>
+                  <option value="CCS2">CCS2</option>
+                  <option value="Type 2">Type 2</option>
+                  <option value="Bharat AC-001">Bharat AC-001</option>
+                  <option value="3-pin (slow)">3-pin (slow)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="host-power">Power (kW)</label>
+              <div class="input-neu">
+                <input type="number" id="host-power" placeholder="e.g. 7.4"
+                       min="1" max="350" step="0.1" required />
+              </div>
+              <div class="field-error" id="err-host-power" aria-live="polite"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="host-price">Price / hr (₹)</label>
+              <div class="input-neu">
+                <input type="number" id="host-price" placeholder="e.g. 80"
+                       min="10" max="500" required />
+              </div>
+              <div class="field-error" id="err-host-price" aria-live="polite"></div>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="host-from">Available From</label>
+              <div class="input-neu">
+                <input type="time" id="host-from" value="08:00" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="host-to">Available To</label>
+              <div class="input-neu">
+                <input type="time" id="host-to" value="20:00" required />
+              </div>
+            </div>
+          </div>
+          <div class="field-error" id="err-host-hours" aria-live="polite"></div>
+
+          <div class="form-group">
+            <label for="host-hostname">Your Name</label>
+            <div class="input-neu">
+              <input type="text" id="host-hostname" placeholder="e.g. Priya S."
+                     minlength="2" maxlength="30" required />
+            </div>
+            <div class="field-error" id="err-host-hostname" aria-live="polite"></div>
+          </div>
+
+          <!-- ── Earnings Estimator ───────────────────────── -->
+          <div class="estimator">
+            <div class="estimator-header">
+              <span class="estimator-title">💰 Earnings Estimator</span>
+              <span class="estimator-badge">Live</span>
+            </div>
+
+            <div class="util-row">
+              <label for="host-utilization">
+                Utilization: <span class="util-val" id="util-value">25</span>%
+              </label>
+              <input type="range" id="host-utilization"
+                     min="10" max="60" value="25"
+                     aria-label="Utilization percentage" />
+            </div>
+
+            <div class="estimator-results" id="estimator-results" aria-live="polite"></div>
+          </div>
+
+          <div class="form-msg" id="host-msg" aria-live="polite"></div>
+          <button type="submit" class="btn-primary btn-full">⚡ List My Charger</button>
+
+        </form>
+      </div>
+
+    </section>
+
+    <!-- ── MY BOOKINGS VIEW ──────────────────────────────────── -->
     <section id="view-bookings" class="view" aria-label="My bookings">
-      <h2>My Bookings</h2>
+      <div class="view-header">
+        <h2>My Bookings</h2>
+      </div>
       <div id="bookings-list" aria-live="polite"></div>
     </section>
 
   </main>
 
-  <footer>
+  <!-- ══ FOOTER ═══════════════════════════════════════════════ -->
+  <footer class="site-footer">
     <p>⚡ ChargeNear · Demo with fictional sample data · No real chargers, users or payments · PromptWars × KickToTech 2026</p>
   </footer>
 
-  <!-- Scripts loaded in dependency order -->
+  <!-- Scripts in dependency order — no inline scripts (CSP compliant) -->
   <script src="js/data.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/logic.js"></script>

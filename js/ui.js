@@ -3,17 +3,17 @@
 // Never uses innerHTML / outerHTML / eval with user data.
 
 // ---------------------------------------------------------------------------
-// Helper: create element with optional class and textContent.
+// el: create an element with optional CSS class and text content.
 // ---------------------------------------------------------------------------
 function el(tag, cls, text) {
   var node = document.createElement(tag);
-  if (cls)  node.className = cls;
+  if (cls)              node.className   = cls;
   if (text !== undefined) node.textContent = text;
   return node;
 }
 
 // ---------------------------------------------------------------------------
-// Helper: show/hide a form message element.
+// setMsg: show / hide a .form-msg element.
 // type = "success" | "error" | "" (hidden)
 // ---------------------------------------------------------------------------
 function setMsg(id, text, type) {
@@ -24,7 +24,7 @@ function setMsg(id, text, type) {
 }
 
 // ---------------------------------------------------------------------------
-// Helper: set a field-error element text.
+// setFieldErr: update an inline field-error element.
 // ---------------------------------------------------------------------------
 function setFieldErr(id, text) {
   var node = document.getElementById(id);
@@ -32,16 +32,16 @@ function setFieldErr(id, text) {
 }
 
 // ---------------------------------------------------------------------------
-// clearHostErrors: clear all host-form inline error messages.
+// clearHostErrors: wipe all host-form validation messages.
 // ---------------------------------------------------------------------------
 function clearHostErrors() {
-  ["err-host-name","err-host-area","err-host-power",
-   "err-host-price","err-host-hours","err-host-hostname"]
+  ["err-host-name", "err-host-area", "err-host-power",
+   "err-host-price", "err-host-hours", "err-host-hostname"]
     .forEach(function(id) { setFieldErr(id, ""); });
 }
 
 // ---------------------------------------------------------------------------
-// getFilters: read current filter values from the DOM.
+// getFilters: read current filter/sort values from the DOM.
 // ---------------------------------------------------------------------------
 function getFilters() {
   return {
@@ -52,7 +52,7 @@ function getFilters() {
 }
 
 // ---------------------------------------------------------------------------
-// resetFilters: clear filter inputs and re-render.
+// resetFilters: clear inputs and re-render the list.
 // ---------------------------------------------------------------------------
 function resetFilters() {
   document.getElementById("filter-connector").value = "";
@@ -62,8 +62,7 @@ function resetFilters() {
 }
 
 // ---------------------------------------------------------------------------
-// renderEmptyState: returns an empty-state div.
-// showReset: whether to include a Reset Filters button.
+// renderEmptyState: build a centred empty-state block.
 // ---------------------------------------------------------------------------
 function renderEmptyState(icon, message, showReset) {
   var wrap = el("div", "empty-state");
@@ -78,22 +77,22 @@ function renderEmptyState(icon, message, showReset) {
 }
 
 // ---------------------------------------------------------------------------
-// renderChargerCard: build a charger card DOM node.
+// renderChargerCard: build one charger card article.
 // ---------------------------------------------------------------------------
 function renderChargerCard(charger, distKm) {
   var card = el("article", "charger-card");
   card.setAttribute("aria-label", "Charger: " + charger.name);
 
-  // Header row: name + price
+  // ── Header: name + lime price pill
   var header = el("div", "charger-card-header");
   header.appendChild(el("div", "charger-card-name",  charger.name));
   header.appendChild(el("div", "charger-card-price", "₹" + charger.pricePerHour + "/hr"));
   card.appendChild(header);
 
-  // Area
+  // ── Area
   card.appendChild(el("div", "charger-card-area", "📍 " + charger.area));
 
-  // Tags row
+  // ── Tags
   var meta = el("div", "charger-card-meta");
   meta.appendChild(el("span", "tag",      charger.connector));
   meta.appendChild(el("span", "tag-muted", charger.powerKw + " kW"));
@@ -101,11 +100,14 @@ function renderChargerCard(charger, distKm) {
   meta.appendChild(el("span", "tag-muted", distKm.toFixed(1) + " km away"));
   card.appendChild(meta);
 
-  // Footer: host label + Book button
+  // ── Divider
+  card.appendChild(el("hr", "card-divider"));
+
+  // ── Footer: host + Book button
   var footer = el("div", "charger-card-footer");
   footer.appendChild(el("span", "charger-host", "Host: " + charger.hostName));
 
-  var bookBtn = el("button", "btn-primary", "Book");
+  var bookBtn = el("button", "btn-primary", "⚡ Book");
   bookBtn.setAttribute("aria-label", "Book " + charger.name);
   bookBtn.addEventListener("click", function() { showBookingView(charger); });
   footer.appendChild(bookBtn);
@@ -115,16 +117,16 @@ function renderChargerCard(charger, distKm) {
 }
 
 // ---------------------------------------------------------------------------
-// renderChargerList: apply filters/sort, then paint the charger list.
+// renderChargerList: filter → sort → paint the charger list.
 // ---------------------------------------------------------------------------
 function renderChargerList() {
   var container = document.getElementById("charger-list");
-  container.textContent = ""; // safe clear
+  container.textContent = ""; // XSS-safe clear
 
   var filters  = getFilters();
   var filtered = state.chargers.slice();
 
-  // Filter
+  // Apply filters
   if (filters.connector) {
     filtered = filtered.filter(function(c) { return c.connector === filters.connector; });
   }
@@ -132,7 +134,7 @@ function renderChargerList() {
     filtered = filtered.filter(function(c) { return c.pricePerHour <= filters.maxPrice; });
   }
 
-  // Compute distances
+  // Compute Haversine distance
   filtered = filtered.map(function(c) {
     return Object.assign({}, c, {
       distKm: haversineKm(state.userLat, state.userLng, c.lat, c.lng)
@@ -159,7 +161,7 @@ function renderChargerList() {
 }
 
 // ---------------------------------------------------------------------------
-// populateHourOptions: fill the start-hour <select> for a given charger.
+// populateHourOptions: fill the start-hour <select>.
 // ---------------------------------------------------------------------------
 function populateHourOptions(charger) {
   var select = document.getElementById("booking-hour");
@@ -175,7 +177,7 @@ function populateHourOptions(charger) {
 }
 
 // ---------------------------------------------------------------------------
-// updatePricePreview: recalculate and display live total price.
+// updatePricePreview: live total cost display inside booking form.
 // ---------------------------------------------------------------------------
 function updatePricePreview() {
   var charger  = state.bookingCharger;
@@ -186,48 +188,50 @@ function updatePricePreview() {
   var endHour  = hour + duration;
   var preview  = document.getElementById("booking-price-preview");
   preview.textContent =
-    "Total: ₹" + total +
-    "  (" + String(hour).padStart(2,"0") + ":00 – " +
-    String(endHour).padStart(2,"0") + ":00 · " +
+    "⚡ Total: ₹" + total +
+    "  (" + String(hour).padStart(2, "0") + ":00 – " +
+    String(endHour).padStart(2, "0") + ":00 · " +
     duration + "h × ₹" + charger.pricePerHour + ")";
 }
 
 // ---------------------------------------------------------------------------
-// showBookingView: populate and switch to the booking section.
+// showBookingView: populate charger summary + switch to booking section.
 // ---------------------------------------------------------------------------
 function showBookingView(charger) {
   state.bookingCharger = charger;
 
-  // Charger info card
+  // ── Build charger info card
   var info = document.getElementById("booking-charger-info");
-  info.textContent = "";
+  info.textContent = ""; // safe clear
 
-  function addRow(label, value) {
-    var row  = el("div", "info-row");
-    var lbl  = el("span", "info-row-label", label);
-    var val  = el("span", "info-row-value", value);
-    row.appendChild(lbl);
+  info.appendChild(el("div", "info-card-title", "Selected Charger"));
+
+  function addRow(label, value, extraClass) {
+    var row = el("div", "info-row");
+    row.appendChild(el("span", "info-row-label", label));
+    var val = el("span", "info-row-value" + (extraClass ? " " + extraClass : ""), value);
     row.appendChild(val);
     info.appendChild(row);
   }
-  addRow("Charger:",   charger.name);
-  addRow("Area:",      charger.area);
-  addRow("Connector:", charger.connector + " · " + charger.powerKw + " kW");
-  addRow("Price:",     "₹" + charger.pricePerHour + "/hr");
-  addRow("Available:", charger.availableFrom + " – " + charger.availableTo);
 
-  // Date range: today → today+7
-  var today   = new Date();
-  var yyyy    = today.getFullYear();
-  var mm      = String(today.getMonth() + 1).padStart(2, "0");
-  var dd      = String(today.getDate()).padStart(2, "0");
+  addRow("Name",      charger.name);
+  addRow("Area",      charger.area);
+  addRow("Connector", charger.connector + " · " + charger.powerKw + " kW");
+  addRow("Price",     "₹" + charger.pricePerHour + "/hr", "price-val");
+  addRow("Available", charger.availableFrom + " – " + charger.availableTo);
+
+  // ── Date bounds: today → +7 days
+  var today    = new Date();
+  var yyyy     = today.getFullYear();
+  var mm       = String(today.getMonth() + 1).padStart(2, "0");
+  var dd       = String(today.getDate()).padStart(2, "0");
   var todayStr = yyyy + "-" + mm + "-" + dd;
 
-  var maxD    = new Date(today);
+  var maxD   = new Date(today);
   maxD.setDate(maxD.getDate() + 7);
-  var maxStr  = maxD.getFullYear() + "-" +
-                String(maxD.getMonth() + 1).padStart(2,"0") + "-" +
-                String(maxD.getDate()).padStart(2,"0");
+  var maxStr = maxD.getFullYear() + "-" +
+               String(maxD.getMonth() + 1).padStart(2, "0") + "-" +
+               String(maxD.getDate()).padStart(2, "0");
 
   var dateEl  = document.getElementById("booking-date");
   dateEl.min  = todayStr;
@@ -259,16 +263,19 @@ function renderBookingsList() {
   }
 
   var list = el("div", "bookings-list");
+
   sorted.forEach(function(booking) {
-    var charger = state.chargers.find(function(c) { return c.id === booking.chargerId; });
+    var charger     = state.chargers.find(function(c) { return c.id === booking.chargerId; });
     var chargerName = charger ? charger.name : "Unknown charger";
+    var endH        = booking.startHour + booking.durationHours;
 
-    var card   = el("article", "booking-card");
+    var card = el("article", "booking-card");
 
+    // Header: charger name + cancel
     var header = el("div", "booking-card-header");
     header.appendChild(el("div", "booking-card-title", chargerName));
 
-    var cancelBtn = el("button", "btn-danger", "Cancel");
+    var cancelBtn = el("button", "btn-danger", "✕ Cancel");
     cancelBtn.setAttribute("aria-label", "Cancel booking at " + chargerName);
     (function(id) {
       cancelBtn.addEventListener("click", function() { cancelBooking(id); });
@@ -276,17 +283,17 @@ function renderBookingsList() {
     header.appendChild(cancelBtn);
     card.appendChild(header);
 
+    // Details grid (uses .booking-card-details + .booking-detail)
     var details = el("div", "booking-card-details");
-    var endH    = booking.startHour + booking.durationHours;
+
+    details.appendChild(el("p", "booking-detail", "📅 " + booking.date));
     details.appendChild(el("p", "booking-detail",
-      "📅 " + booking.date));
+      "⏰ " + String(booking.startHour).padStart(2, "0") + ":00 – " +
+      String(endH).padStart(2, "0") + ":00 (" + booking.durationHours + "h)"));
     details.appendChild(el("p", "booking-detail",
-      "⏰ " + String(booking.startHour).padStart(2,"0") + ":00 – " +
-      String(endH).padStart(2,"0") + ":00 (" + booking.durationHours + "h)"));
-    details.appendChild(el("p", "booking-detail",
-      "💳 ₹" + booking.totalPrice + " (demo — not charged)"));
-    details.appendChild(el("p", "booking-detail",
-      "👤 " + booking.driverName));
+      "💳 ₹" + booking.totalPrice + " (demo)"));
+    details.appendChild(el("p", "booking-detail", "👤 " + booking.driverName));
+
     card.appendChild(details);
     list.appendChild(card);
   });
@@ -295,7 +302,7 @@ function renderBookingsList() {
 }
 
 // ---------------------------------------------------------------------------
-// updateEstimator: recalculate and display earnings estimate live.
+// updateEstimator: recalculate and paint the live earnings estimate.
 // ---------------------------------------------------------------------------
 function updateEstimator() {
   var fromVal  = document.getElementById("host-from").value;
@@ -303,11 +310,13 @@ function updateEstimator() {
   var priceVal = parseInt(document.getElementById("host-price").value, 10);
   var util     = parseInt(document.getElementById("host-utilization").value, 10);
 
+  // Update slider display
   document.getElementById("util-value").textContent = util;
 
   var resultsEl = document.getElementById("estimator-results");
   resultsEl.textContent = "";
 
+  // Guard: need valid price + hours
   if (!fromVal || !toVal || isNaN(priceVal) || priceVal < 10) {
     resultsEl.appendChild(
       el("p", "estimator-placeholder", "Fill in price and hours above to see your estimate.")
@@ -322,18 +331,18 @@ function updateEstimator() {
   var availHours = toH - fromH;
   var result     = calcEarnings(availHours, util / 100, priceVal);
 
+  var fmt = function(n) { return "₹" + n.toLocaleString("en-IN"); };
+
   function makeRow(label, value, isTotal) {
-    var row  = el("div", isTotal ? "estimator-row total" : "estimator-row");
+    var row = el("div", isTotal ? "estimator-row total" : "estimator-row");
     row.appendChild(el("span", null, label));
     row.appendChild(el("span", null, value));
     return row;
   }
 
-  var fmt = function(n) { return "₹" + n.toLocaleString("en-IN"); };
-
-  resultsEl.appendChild(makeRow("Monthly Gross:",    fmt(result.gross), false));
-  resultsEl.appendChild(makeRow("Platform Fee (10%):", "−" + fmt(result.fee), false));
-  resultsEl.appendChild(makeRow("Your Net Estimate:", fmt(result.net),  true));
+  resultsEl.appendChild(makeRow("Monthly Gross:",       fmt(result.gross), false));
+  resultsEl.appendChild(makeRow("Platform Fee (10%):",  "−" + fmt(result.fee), false));
+  resultsEl.appendChild(makeRow("Your Net Estimate:",   fmt(result.net),   true));
   resultsEl.appendChild(el("p", "estimator-idle",
     "Your charger would otherwise sit idle ~" + result.idleHours + " hours/day"));
   resultsEl.appendChild(el("p", "estimator-disclaimer",
