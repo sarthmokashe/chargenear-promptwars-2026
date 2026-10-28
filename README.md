@@ -340,4 +340,12 @@ Real authentication · secure payments (UPI) · live charger status via OCPP/sma
 
 ## Assumptions
 
-*(The AI agent appends assumptions here as it builds.)*
+*(Added by Google Antigravity agent — 2026-10-28)*
+
+1. **Workspace root = chargenear folder.** The `KTT_hackathon` directory was treated as the `chargenear/` root because `README.md` was already there. All files created directly inside it.
+2. **"booking" is a 4th hidden view** (not in main nav). It is activated when the user clicks "Book" on a charger card. The nav highlights nothing; a "← Back" button returns to Find.
+3. **`availableTo` hour is exclusive.** A charger available 08:00–20:00 accepts bookings up to 20:00 (i.e., a 2h booking starting at 18:00 ends at 20:00 and is valid; starting at 19:00 for 2h is rejected).
+4. **Start-hour select is bounded** to `[availableFrom, availableTo - 1]` to prevent obviously invalid starts.
+5. **User-listed chargers** are assigned the approximate lat/lng of the selected Pune area from a lookup table (no real geocoding, no API key).
+6. **`element.style` JS API** is used in a few places (e.g. `info-row` layout). This is not an inline HTML `style=""` attribute and is therefore **CSP-compliant** per the spec (`style-src 'self'` blocks HTML inline attributes and `<style>` tags, not `element.style` in JS).
+7. **No ES6 modules** used — plain `<script>` tags in dependency order so the app works when opened directly as `file://` without a server.
